@@ -1,0 +1,185 @@
+[
+    {
+        "name": "status",
+        "label": "Status da Produção",
+        "type": "select",
+        "required": true,
+        "options": [
+            {
+                "value": "Para editar",
+                "label": "Para editar"
+            },
+            {
+                "value": "Editados / Conferência",
+                "label": "Editados / Conferência"
+            },
+            {
+                "value": "Para enviar prova",
+                "label": "Para enviar prova"
+            },
+            {
+                "value": "Avaliação do autor",
+                "label": "Avaliação do autor"
+            },
+            {
+                "value": "Alterações",
+                "label": "Alterações"
+            },
+            {
+                "value": "Para publicar",
+                "label": "Para publicar"
+            }
+        ],
+        "gridCol": "col-span-full"
+    },
+    {
+        "name": "title",
+        "label": "Nome do livro",
+        "type": "text",
+        "required": true,
+        "gridCol": "col-span-full"
+    },
+    {
+        "name": "contact_name",
+        "label": "Nome do Contato Principal",
+        "type": "text",
+        "required": true,
+        "gridCol": "sm:col-span-1"
+    },
+    {
+        "name": "contact_phone",
+        "label": "Telefone do Contato",
+        "type": "tel",
+        "mask": "(99) 99999-9999",
+        "required": true,
+        "gridCol": "sm:col-span-1"
+    },
+    {
+        "name": "contact_email",
+        "label": "E-mail do Contato",
+        "type": "email",
+        "required": true,
+        "gridCol": "sm:col-span-1"
+    },
+    {
+        "name": "authors",
+        "label": "Autores e Organizadores",
+        "type": "dynamic_list",
+        "required": true,
+        "gridCol": "col-span-full",
+        "description": "Adicione múltiplos autores do livro."
+    },
+    {
+        "name": "isbn",
+        "label": "ISBN",
+        "type": "text",
+        "mask": "999-99-9999-999-9",
+        "required": false,
+        "gridCol": "sm:col-span-1"
+    },
+    {
+        "name": "doi",
+        "label": "DOI",
+        "type": "text",
+        "required": false,
+        "gridCol": "sm:col-span-1"
+    },
+    {
+        "name": "contract_value",
+        "label": "Valor do Contrato",
+        "type": "currency",
+        "required": false,
+        "gridCol": "sm:col-span-1"
+    },
+    {
+        "name": "installments",
+        "label": "Número de Parcelas",
+        "type": "number",
+        "required": false,
+        "gridCol": "sm:col-span-1"
+    },
+    {
+        "name": "payment_status",
+        "label": "Status do Pagamento",
+        "type": "select",
+        "required": false,
+        "options": [
+            {
+                "value": "pendente",
+                "label": "Pendente"
+            },
+            {
+                "value": "em_andamento",
+                "label": "Em Andamento (Parcelado)"
+            },
+            {
+                "value": "pago",
+                "label": "Pago Integralmente"
+            }
+        ],
+        "gridCol": "sm:col-span-1"
+    },
+    {
+        "name": "commission_value",
+        "label": "Valor da Comissão",
+        "type": "currency",
+        "required": false,
+        "defaultValue": 0.00,
+        "gridCol": "sm:col-span-1"
+    },
+    {
+        "name": "commission_payment_status",
+        "label": "Pagamento da Comissão",
+        "type": "select",
+        "required": false,
+        "options": [
+            {
+                "value": "pendente",
+                "label": "Pendente"
+            },
+            {
+                "value": "pago",
+                "label": "Pago"
+            }
+        ],
+        "gridCol": "sm:col-span-1"
+    },
+    {
+        "name": "upload_original",
+        "label": "Arquivo Original (Manuscrito)",
+        "type": "file",
+        "required": false,
+        "gridCol": "col-span-full"
+    },
+    {
+        "name": "upload_edited",
+        "label": "Arquivo Editado (Final)",
+        "type": "file",
+        "required": false,
+        "gridCol": "col-span-full"
+    },
+    {
+        "name": "upload_covers",
+        "label": "Capas do Livro",
+        "type": "file_compound",
+        "fields": [
+            {
+                "name": "front",
+                "label": "Capa Frontal"
+            },
+            {
+                "name": "back",
+                "label": "Fundo da Capa"
+            }
+        ],
+        "required": false,
+        "gridCol": "col-span-full"
+    },
+    {
+        "name": "upload_commission_receipt",
+        "label": "Comprovante da Comissão",
+        "type": "file",
+        "required": false,
+        "gridCol": "col-span-full"
+    }
+]

@@ -1,0 +1,345 @@
+import React from 'react';
+import { Trash2, Upload, File, CheckCircle2, Info, BookOpen, Wallet, Folder, Globe, FileUp, Download, Link } from 'lucide-react';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import AuthorsField from '../components/fields/AuthorsField';
+import NegotiatorField from '../components/fields/NegotiatorField';
+import PaymentStatusField from '../components/fields/PaymentStatusField';
+import WorkflowField from '../components/fields/WorkflowField';
+import CoverField from '../components/fields/CoverField';
+import BookDetailPipeline from '../components/BookDetailPipeline';
+import FichyContainer from '../components/fichy/FichyContainer';
+import CrossrefTab from '../components/crossref/CrossrefTab';
+import { applyMask } from '../utils/masks';
+import { api } from '../services/api';
+
+const ICON_MAP = { Info, BookOpen, Wallet, Database: Folder, User: Info };
+
+const FieldRenderer = ({
+  f, selectedRecord, setSelectedRecord, records, setRecords, dragActiveFieldId,
+  handleDrag, handleDrop, handleFileSelection, removeFile
+}) => (
+  <div className="space-y-2">
+    <label className="text-[11px] font-black text-[#1F2A8A] uppercase tracking-widest px-1 block">{f.label}</label>
+    {f.type === 'select' ? (
+      <select
+        className="w-full h-11 px-3 bg-white border border-slate-300 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[#1E88E5] transition-all shadow-sm"
+        value={selectedRecord.data[f.id] || ""}
+        onChange={e => {
+          const updated = { ...selectedRecord, data: { ...selectedRecord.data, [f.id]: e.target.value } };
+          setSelectedRecord(updated);
+          setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
+          api.updateRecord(selectedRecord.id, updated.data);
+        }}
+      >
+        <option value="">Selecione...</option>
+        {f.options && (Array.isArray(f.options) ? f.options : String(f.options).split(',').map(s => s.trim()).filter(Boolean)).map(o => (
+          <option key={o} value={o}>{o}</option>
+        ))}
+      </select>
+    ) : f.type === 'authors' ? (
+      <AuthorsField
+        value={selectedRecord.data[f.id]}
+        onChange={next => {
+          const updated = { ...selectedRecord, data: { ...selectedRecord.data, [f.id]: next } };
+          setSelectedRecord(updated);
+          setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
+          api.updateRecord(selectedRecord.id, updated.data);
+        }}
+      />
+    ) : f.type === 'negotiator' ? (
+      <NegotiatorField
+        value={selectedRecord.data[f.id]}
+        onChange={next => {
+          const updated = { ...selectedRecord, data: { ...selectedRecord.data, [f.id]: next } };
+          setSelectedRecord(updated);
+          setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
+          api.updateRecord(selectedRecord.id, updated.data);
+        }}
+      />
+    ) : f.type === 'payment_status' ? (
+      <PaymentStatusField
+        value={selectedRecord.data[f.id]}
+        onChange={next => {
+          const updated = { ...selectedRecord, data: { ...selectedRecord.data, [f.id]: next } };
+          setSelectedRecord(updated);
+          setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
+          api.updateRecord(selectedRecord.id, updated.data);
+        }}
+      />
+    ) : f.type === 'workflow' ? (
+      <WorkflowField
+        value={selectedRecord.data[f.id]}
+        onChange={next => {
+          const updated = { ...selectedRecord, data: { ...selectedRecord.data, [f.id]: next } };
+          setSelectedRecord(updated);
+          setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
+          api.updateRecord(selectedRecord.id, updated.data);
+        }}
+      />
+    ) : f.type === 'cover' ? (
+      <CoverField
+        value={selectedRecord.data[f.id]}
+        onChange={next => {
+          const updated = { ...selectedRecord, data: { ...selectedRecord.data, [f.id]: next } };
+          setSelectedRecord(updated);
+          setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
+          api.updateRecord(selectedRecord.id, updated.data);
+        }}
+      />
+    ) : f.type === 'file' ? (
+      <div className="space-y-4">
+        <div
+          className={`relative group transition-all duration-300 ${dragActiveFieldId === f.id ? 'scale-[1.01]' : ''}`}
+          onDragEnter={e => handleDrag(e, f.id)}
+          onDragLeave={e => handleDrag(e, f.id)}
+          onDragOver={e => handleDrag(e, f.id)}
+          onDrop={e => handleDrop(e, f.id)}
+        >
+          <input type="file" id={`file-${f.id}`} className="hidden" multiple onChange={e => handleFileSelection(e, f.id)} />
+          <label
+            htmlFor={`file-${f.id}`}
+            className={`w-full min-h-[120px] px-6 py-6 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all border-2 border-dashed ${dragActiveFieldId === f.id ? 'bg-[#FFF3E0] border-[#FF9800] shadow-sm' : 'bg-transparent border-slate-200 hover:border-[#FF9800] hover:bg-[#FFF8F0]'}`}
+          >
+            <div className="text-[#FF9800] mb-2">
+              <FileUp size={32} strokeWidth={2} />
+            </div>
+            <span className="text-[11px] font-black uppercase text-slate-800 tracking-wider">Anexar Arquivo (Tamanho Ilimitado)</span>
+            <span className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">(Suporta qualquer formato)</span>
+          </label>
+        </div>
+        {Array.isArray(selectedRecord.data[f.id]) && selectedRecord.data[f.id].length > 0 && (
+          <div className="space-y-2">
+            {selectedRecord.data[f.id].map((fileObj, idx) => {
+              const isMock = typeof fileObj === 'string';
+              const fileName = isMock ? fileObj : fileObj.name;
+              const fileData = isMock ? null : fileObj.data;
+
+              return (
+                <div key={idx} className="flex items-center justify-between p-2 bg-white border border-slate-100 rounded-xl group/genfile">
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <File size={14} className="text-slate-400 shrink-0" />
+                    <span className="text-[11px] font-bold truncate max-w-[200px]" title={fileName}>{fileName}</span>
+                  </div>
+                  <div className="flex items-center gap-1 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (fileData) {
+                          const link = document.createElement('a');
+                          link.href = fileData;
+                          link.download = fileName;
+                          link.click();
+                        } else {
+                          alert('Este arquivo é apenas um registro textual (mock) legado e não possui conteúdo para download.');
+                        }
+                      }}
+                      className="p-1.5 text-orange-500 bg-orange-50 hover:bg-orange-100 hover:text-orange-600 rounded transition-colors"
+                      title="Fazer Download"
+                    >
+                      <Download size={14} />
+                    </button>
+                    <button
+                      onClick={() => removeFile(f.id, isMock ? fileName : fileObj)}
+                      className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded opacity-100 md:opacity-0 group-hover/genfile:opacity-100 transition-opacity"
+                      title="Remover"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    ) : f.type === 'long_text' ? (
+      <textarea
+        className="w-full min-h-[120px] p-4 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-[#1E88E5] transition-all shadow-sm resize-y"
+        value={selectedRecord.data[f.id] || ""}
+        onChange={e => {
+          const updated = { ...selectedRecord, data: { ...selectedRecord.data, [f.id]: e.target.value } };
+          setSelectedRecord(updated);
+          setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
+          api.updateRecord(selectedRecord.id, updated.data);
+        }}
+        onKeyDown={e => e.stopPropagation()}
+      />
+    ) : (
+      <input
+        className="w-full h-11 px-4 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-[#1E88E5] transition-all shadow-sm"
+        value={selectedRecord.data[f.id] || ""}
+        onChange={e => {
+          const masked = applyMask(e.target.value, f.type);
+          const updated = { ...selectedRecord, data: { ...selectedRecord.data, [f.id]: masked } };
+          setSelectedRecord(updated);
+          setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
+          api.updateRecord(selectedRecord.id, updated.data);
+        }}
+        onKeyDown={e => e.stopPropagation()}
+      />
+    )}
+  </div>
+);
+
+const DetailView = ({
+  selectedRecord, setSelectedRecord, records, setRecords,
+  metadata, activeDetailTab, setActiveDetailTab, setView,
+  currentDetailTabLayout,
+  dragActiveFieldId, handleDrag, handleDrop, handleFileSelection, removeFile
+}) => {
+  const tabs = [
+    ...(metadata?.tabs || []),
+    { id: 'fichy', label: 'Ficha Catalográfica', icon: BookOpen },
+    { id: 'crossref', label: 'Crossy', icon: Link }
+  ];
+  const fieldBank = metadata?.fieldBank;
+
+  // Canonical data: merge all DB field aliases into unified keys used by Fichy and Crossy
+  const d = selectedRecord.data;
+  const canonicalData = {
+    titulo: d.titulo || d.f_title || d.title || d.f6 || '',
+    isbn: d.isbn || d.f7 || '',
+    ano: d.ano || d.f11 || '',
+    editora: d.editora || d.f10 || 'Editora Poisson',
+    doi: d.doi || d.f18 || '',
+    url: d.url || d.f20 || 'https://livros.poisson.com.br/individuais/',
+    nomes: d.nomes || (d.f1 || d.author ? [d.f1 || d.author].filter(Boolean) : []),
+  };
+  const getTabHasContent = (tab) => {
+    if (tab.id === 'fichy' || tab.id === 'crossref') return true;
+    if (fieldBank && tab.rows) return tab.rows.some(r => (r || []).length > 0);
+    return (tab.fields || []).length > 0;
+  };
+  return (
+    <div className="w-full animate-in zoom-in-95 duration-300">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-4">
+            <span className="text-blue-700 bg-blue-50 px-4 py-1 rounded-2xl border border-blue-200 text-xl font-mono shrink-0">{selectedRecord.id}</span>
+            <span className="truncate">{canonicalData.titulo || 'Obra Sem Título'}</span>
+          </h1>
+          <p className="text-slate-400 font-medium mt-1 uppercase tracking-[0.15em] text-[10px]">Gestão Individual Poisson</p>
+        </div>
+        <Button variant="danger" size="sm" icon={Trash2} onClick={() => api.deleteRecord(selectedRecord.id).then(() => { setRecords(records.filter(r => r.id !== selectedRecord.id)); setView('list'); })}>
+          Eliminar
+        </Button>
+      </div>
+
+      <BookDetailPipeline
+        bookStatus={selectedRecord.data.status || selectedRecord.data.f3 || 'Para editar'}
+        recordData={selectedRecord.data}
+        onUpdate={(newPipelineDates) => {
+          const updated = { ...selectedRecord, data: { ...selectedRecord.data, pipeline_dates: newPipelineDates } };
+          setSelectedRecord(updated);
+          setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
+          api.updateRecord(selectedRecord.id, updated.data);
+        }}
+      />
+
+      <Card className="border-none shadow-2xl overflow-visible">
+        <div className="flex border-b border-slate-200 bg-slate-50/50 flex-wrap">
+          {tabs.filter(t => getTabHasContent(t)).map(tab => {
+            const isActive = activeDetailTab === tab.id;
+            const Icon = typeof tab.icon === 'function' ? tab.icon : ICON_MAP[tab.icon] || Info;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveDetailTab(tab.id)}
+                className={`flex items-center gap-2 py-4 px-5 rounded-t-lg border transition-all -mb-px font-semibold text-[11px] ${isActive
+                  ? 'bg-white border-slate-200 border-b-white text-slate-800 shadow-sm relative z-10'
+                  : 'bg-slate-100/80 border-transparent text-slate-500 hover:bg-slate-100'
+                  }`}
+              >
+                <Icon size={14} className="opacity-80" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="p-10 min-h-[350px] bg-white border border-slate-200 border-t-0 rounded-b-xl">
+          {activeDetailTab === 'fichy' ? (
+            <FichyContainer
+              initialData={canonicalData}
+              onDataSync={(fichyData) => {
+                const updated = {
+                  ...selectedRecord,
+                  data: { ...selectedRecord.data, ...fichyData }
+                };
+                setSelectedRecord(updated);
+                setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
+                api.updateRecord(selectedRecord.id, updated.data);
+              }}
+            />
+          ) : activeDetailTab === 'crossref' ? (
+            <CrossrefTab
+              initialData={canonicalData}
+              onDataSync={(crossyData) => {
+                const updated = {
+                  ...selectedRecord,
+                  data: { ...selectedRecord.data, ...crossyData }
+                };
+                setSelectedRecord(updated);
+                setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
+                api.updateRecord(selectedRecord.id, updated.data);
+              }}
+            />
+          ) : (
+            <div className="w-full bg-[#E6E6E6] p-6 lg:p-8 rounded-b-xl md:rounded-2xl shadow-md md:border-t-[8px] border-[#1E88E5]">
+
+              {/* Added generic header mapped directly from tab selected */}
+              {(() => {
+                const activeTabObj = tabs.find(t => t.id === activeDetailTab);
+                const ActiveIcon = typeof activeTabObj?.icon === 'function' ? activeTabObj.icon : ICON_MAP[activeTabObj?.icon] || Info;
+                return activeTabObj ? (
+                  <header className="border-b border-slate-300 pb-4 mb-6 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                    <div>
+                      <div className="text-[10px] font-bold text-[#1F2A8A] tracking-widest mb-1 uppercase">Gestão da Obra</div>
+                      <h1 className="text-2xl font-black text-[#1F2A8A] flex items-center gap-2 uppercase tracking-tighter">
+                        <ActiveIcon className="w-7 h-7 text-[#F57C00]" />
+                        {activeTabObj.label}
+                      </h1>
+                    </div>
+                  </header>
+                ) : null;
+              })()}
+
+              <div className="space-y-8 animate-in fade-in slide-in-from-top-1 duration-200">
+                {(currentDetailTabLayout || []).map((row, ri) => (
+                  <div key={ri} className="grid grid-cols-12 gap-4 xl:gap-6">
+                    {row.map(({ field: f, colSpan }, ci) =>
+                      f ? (
+                        <div key={`${f.id}-${ci}`} style={{ gridColumn: `span ${colSpan || 12}` }}>
+                          <FieldRenderer
+                            f={f}
+                            selectedRecord={selectedRecord}
+                            setSelectedRecord={setSelectedRecord}
+                            records={records}
+                            setRecords={setRecords}
+                            dragActiveFieldId={dragActiveFieldId}
+                            handleDrag={handleDrag}
+                            handleDrop={handleDrop}
+                            handleFileSelection={handleFileSelection}
+                            removeFile={removeFile}
+                          />
+                        </div>
+                      ) : null
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 rounded-b-xl">
+          <Button variant="ghost" size="sm" onClick={() => setView('list')}>Fechar</Button>
+          <Button variant="primary" size="md" icon={CheckCircle2} onClick={() => setView('list')}>Confirmar Dados</Button>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+export default DetailView;
