@@ -139,7 +139,7 @@ const KpiWidget = ({ label, value, sublabel, accentGradient, icon: Icon }) => (
 );
 
 // ── Add Widget Drawer ────────────────────────────────────────────────────────
-const AddWidgetDrawer = ({ allFields, onAdd, onClose }) => {
+const AddWidgetDrawer = ({ allFields, records, onAdd, onClose }) => {
   const [step, setStep] = useState(1);               // 1=type, 2=field, 3=category
   const [selectedType, setSelectedType] = useState(null);
   const [selectedField, setSelectedField] = useState(null);
@@ -271,9 +271,9 @@ const AddWidgetDrawer = ({ allFields, onAdd, onClose }) => {
             </div>
           )}
 
-          {/* Step 3: Choose category (injected from records via parent — placeholder) */}
+          {/* Step 3: Choose category */}
           {step === 3 && (
-            <CategoryStep field={selectedField} onSelect={setSelectedCategory} selected={selectedCategory} onFinish={handleFinish} />
+            <CategoryStep field={selectedField} records={records} onSelect={setSelectedCategory} selected={selectedCategory} onFinish={handleFinish} />
           )}
         </div>
       </div>
@@ -281,15 +281,22 @@ const AddWidgetDrawer = ({ allFields, onAdd, onClose }) => {
   );
 };
 
-// Category step needs records from parent — we pass records down via context trick
-// (We'll use a module-level ref trick to keep it self-contained)
-let _records = [];
-const CategoryStep = ({ field, onSelect, selected, onFinish }) => {
+// Category step receives records directly as a prop
+const CategoryStep = ({ field, records, onSelect, selected, onFinish }) => {
   const categories = useMemo(() => {
     if (!field) return [];
-    const set = new Set(_records.map(r => r.data[field.id]).filter(Boolean));
+
+    // Para campos select: usa as options definidas no campo (fonte confiável)
+    if (field.type === 'select' && field.options?.length > 0) {
+      return field.options
+        .map(o => (typeof o === 'string' ? o : (o.value || o.label)))
+        .filter(Boolean);
+    }
+
+    // Para campos text: deriva dos valores reais nos registros
+    const set = new Set(records.map(r => r.data[field.id]).filter(Boolean));
     return [...set].sort();
-  }, [field]);
+  }, [field, records]);
 
   return (
     <div className="space-y-2">
@@ -348,8 +355,7 @@ const DashboardView = ({ records, allFields, dashWidgets, setDashWidgets, onOpen
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
-  // Inject records for CategoryStep
-  _records = records;
+  // Inject records for CategoryStep — removed in favor of prop passing
 
   const addWidget = useCallback((cfg) => {
     setDashWidgets(prev => [...prev, { id: `w-${Date.now()}`, ...cfg }]);
@@ -541,7 +547,7 @@ const DashboardView = ({ records, allFields, dashWidgets, setDashWidgets, onOpen
 
       {/* Add Widget Drawer */}
       {showDrawer && (
-        <AddWidgetDrawer allFields={allFields} onAdd={addWidget} onClose={() => setShowDrawer(false)} />
+        <AddWidgetDrawer allFields={allFields} records={records} onAdd={addWidget} onClose={() => setShowDrawer(false)} />
       )}
 
       {/* Drill-down modal */}
