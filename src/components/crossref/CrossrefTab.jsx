@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { generateCrossrefXml } from './crossrefXmlBuilder';
-import { Download, UploadCloud, CheckCircle, AlertCircle, Loader2, Copy, Link, Eye, EyeOff, BookOpen, Plus, Trash2, BookMarked, ChevronDown, ChevronUp, Code2 } from 'lucide-react';
+import { Download, UploadCloud, CheckCircle, AlertCircle, Loader2, Copy, Link, Eye, EyeOff, BookOpen, Plus, Trash2, BookMarked, ChevronDown, ChevronUp, Code2, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 const URL_BASE = 'https://livros.poisson.com.br/individuais/';
 
@@ -44,6 +45,61 @@ export default function CrossrefTab({ initialData }) {
 
     // XML panel toggle
     const [showXml, setShowXml] = useState(true);
+    const fileInputRef = useRef(null);
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const data = await file.arrayBuffer();
+            const workbook = XLSX.read(data);
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+            const newChapters = [];
+            let numCounter = 1;
+
+            for (let i = 0; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                if (!row || row.length === 0) continue;
+
+                let num = row[0];
+                let titulo = row[1] || '';
+                let autores = row[2] || '';
+
+                if (!num && !titulo && !autores) continue;
+
+                let parsedNum = parseInt(num, 10);
+                if (isNaN(parsedNum)) {
+                    if (i === 0) continue; // Pular provável cabeçalho
+                    parsedNum = numCounter; // Fallback se não for número validamente
+                }
+
+                if (titulo) {
+                    newChapters.push({
+                        num: parsedNum,
+                        titulo: String(titulo).trim(),
+                        autores: String(autores).trim()
+                    });
+                    numCounter = parsedNum + 1;
+                }
+            }
+
+            if (newChapters.length > 0) {
+                setChapters(newChapters);
+                showMessage(`${newChapters.length} capítulos importados!`, 'success');
+            } else {
+                showMessage('O arquivo parece vazio ou fora do formato (nº, título, autores).', 'error');
+            }
+        } catch (err) {
+            console.error('Erro xlsx:', err);
+            showMessage('Erro ao processar o arquivo Excel.', 'error');
+        }
+
+        // Reset the input so the same file migh be loaded again
+        e.target.value = null;
+    };
 
     const addChapter = () => setChapters(prev => [...prev, { num: prev.length + 1, titulo: '', autores: '' }]);
     const removeChapter = (i) => setChapters(prev => prev.filter((_, idx) => idx !== i).map((c, idx) => ({ ...c, num: idx + 1 })));
@@ -407,14 +463,33 @@ export default function CrossrefTab({ initialData }) {
                                         ))}
                                     </div>
                                     <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                                        <button
-                                            type="button"
-                                            onClick={addChapter}
-                                            className="flex items-center gap-1.5 text-[11px] font-bold text-[#1E88E5] hover:text-[#1565C0] transition-colors"
-                                        >
-                                            <Plus className="w-3.5 h-3.5" />
-                                            Adicionar Capítulo
-                                        </button>
+                                        <div className="flex items-center gap-4">
+                                            <button
+                                                type="button"
+                                                onClick={addChapter}
+                                                className="flex items-center gap-1.5 text-[11px] font-bold text-[#1E88E5] hover:text-[#1565C0] transition-colors"
+                                            >
+                                                <Plus className="w-3.5 h-3.5" />
+                                                Adicionar Capítulo
+                                            </button>
+                                            <div className="h-4 w-px bg-slate-200"></div>
+                                            <input
+                                                type="file"
+                                                accept=".xlsx, .xls, .csv"
+                                                className="hidden"
+                                                ref={fileInputRef}
+                                                onChange={handleFileUpload}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => fileInputRef.current?.click()}
+                                                className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
+                                                title="Formato: Col 1: Nº, Col 2: Título, Col 3: Autores (separados por vírgula)"
+                                            >
+                                                <FileSpreadsheet className="w-3.5 h-3.5" />
+                                                Importar Excel
+                                            </button>
+                                        </div>
                                         <p className="text-[9px] text-slate-400 italic">
                                             DOIs gerados: <span className="font-mono">10.36229/{(formData.isbn || '').replace(/\D/g, '')}.CAP01, .CAP02…</span>
                                         </p>

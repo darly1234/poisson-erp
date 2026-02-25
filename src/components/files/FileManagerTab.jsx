@@ -8,14 +8,18 @@ const API = (process.env.REACT_APP_API_URL || 'http://localhost:3001/api') + '/f
 const SSH_CREDS_KEY = 'poisson_ssh_credentials';
 
 const getSshHeaders = () => {
+    const headers = {};
     try {
         const c = JSON.parse(localStorage.getItem(SSH_CREDS_KEY) || '{}');
-        return {
-            'x-ssh-host': c.sshHost || '',
-            'x-ssh-user': c.sshUser || '',
-            'x-ssh-password': c.sshPassword || '',
-        };
-    } catch { return {}; }
+        if (c.sshHost) headers['x-ssh-host'] = c.sshHost;
+        if (c.sshUser) headers['x-ssh-user'] = c.sshUser;
+        if (c.sshPassword) headers['x-ssh-password'] = c.sshPassword;
+    } catch { }
+
+    const token = sessionStorage.getItem('access_token');
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    return headers;
 };
 
 const fmt = (bytes) => {
@@ -276,7 +280,7 @@ const FileManagerTab = ({ initialPath = '/', fallbackPath = '/individuais' }) =>
                                     <td className="px-4 py-2.5 text-right text-slate-400">{fmtDate(item.modTime)}</td>
                                     <td className="px-4 py-2.5">
                                         {item.type === 'file' && (
-                                            <a href={`${API}/download?path=${encodeURIComponent(currentPath.replace(/\/$/, '') + '/' + item.name)}`}
+                                            <a href={`${API}/download?path=${encodeURIComponent(currentPath.replace(/\/$/, '') + '/' + item.name)}&token=${sessionStorage.getItem('access_token')}`}
                                                 target="_blank" rel="noopener noreferrer" download
                                                 onClick={e => e.stopPropagation()}
                                                 className="text-slate-400 hover:text-blue-500 transition-colors">
