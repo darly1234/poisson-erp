@@ -1,26 +1,49 @@
-const BASE_URL = 'http://localhost:3001/api';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+
+const fetchWithAuth = async (endpoint, options = {}) => {
+  const token = sessionStorage.getItem('access_token');
+  const headers = {
+    ...options.headers,
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+
+  const res = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers,
+    credentials: 'include' // Envia cookie do refresh token
+  });
+
+  if (res.status === 401) {
+    // Se der 401, o AuthContext.refresh() tratará o silent login e um reload pode ser necessário,
+    // mas por hora, forçamos um erro para ir para fallback visual ou redirecionar.
+    throw new Error('Não autorizado (401). Faça login novamente.');
+  }
+
+  if (!res.ok) throw new Error('Erro na requisição');
+  return res.json();
+};
 
 export const api = {
-  getRecords: () => fetch(`${BASE_URL}/records`).then(r => r.json()),
-  createRecord: (data) => fetch(`${BASE_URL}/records`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json()),
-  updateRecord: (id, data) => fetch(`${BASE_URL}/records/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data }) }).then(r => r.json()),
-  deleteRecord: (id) => fetch(`${BASE_URL}/records/${id}`, { method: 'DELETE' }).then(r => r.json()),
+  getRecords: () => fetchWithAuth('/records'),
+  createRecord: (data) => fetchWithAuth('/records', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+  updateRecord: (id, data) => fetchWithAuth(`/records/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data }) }),
+  deleteRecord: (id) => fetchWithAuth(`/records/${id}`, { method: 'DELETE' }),
 
-  getMetadata: () => fetch(`${BASE_URL}/metadata`).then(r => r.json()),
+  getMetadata: () => fetchWithAuth('/metadata').catch(() => null),
   saveMetadata: (data) => {
     const body = data?.fieldBank ? data : { tabs: data };
-    return fetch(`${BASE_URL}/metadata`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
+    return fetchWithAuth('/metadata', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   },
 
-  getFilters: () => fetch(`${BASE_URL}/filters`).then(r => r.json()),
-  createFilter: (filter) => fetch(`${BASE_URL}/filters`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(filter) }).then(r => r.json()),
-  updateFilter: (id, filter) => fetch(`${BASE_URL}/filters/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(filter) }).then(r => r.json()),
-  deleteFilter: (id) => fetch(`${BASE_URL}/filters/${id}`, { method: 'DELETE' }).then(r => r.json()),
+  getFilters: () => fetchWithAuth('/filters').catch(() => []),
+  createFilter: (filter) => fetchWithAuth('/filters', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(filter) }),
+  updateFilter: (id, filter) => fetchWithAuth(`/filters/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(filter) }),
+  deleteFilter: (id) => fetchWithAuth(`/filters/${id}`, { method: 'DELETE' }),
 
-  exportExcel: () => window.open(`${BASE_URL}/backup/export`, '_blank'),
+  exportExcel: () => window.open(`${API_URL}/backup/export`, '_blank'),
   importExcel: (file) => {
     const formData = new FormData();
     formData.append('file', file);
-    return fetch(`${BASE_URL}/backup/import`, { method: 'POST', body: formData }).then(r => r.json());
+    return fetchWithAuth('/backup/import', { method: 'POST', body: formData });
   }
 };

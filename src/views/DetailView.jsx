@@ -1,5 +1,5 @@
-import React from 'react';
-import { Trash2, Upload, File, CheckCircle2, Info, BookOpen, Wallet, Folder, Globe, FileUp, Download, Link } from 'lucide-react';
+import React, { useState } from 'react';
+import { Trash2, Upload, File, CheckCircle2, Info, BookOpen, Wallet, Folder, Globe, FileUp, Download, Link, ShoppingBag, FolderOpen } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import AuthorsField from '../components/fields/AuthorsField';
@@ -10,6 +10,8 @@ import CoverField from '../components/fields/CoverField';
 import BookDetailPipeline from '../components/BookDetailPipeline';
 import FichyContainer from '../components/fichy/FichyContainer';
 import CrossrefTab from '../components/crossref/CrossrefTab';
+import WordPressTab from '../components/wordpress/WordPressTab';
+import FileManagerTab from '../components/files/FileManagerTab';
 import { applyMask } from '../utils/masks';
 import { api } from '../services/api';
 
@@ -191,9 +193,33 @@ const DetailView = ({
   const tabs = [
     ...(metadata?.tabs || []),
     { id: 'fichy', label: 'Ficha Catalográfica', icon: BookOpen },
-    { id: 'crossref', label: 'Crossy', icon: Link }
+    { id: 'crossref', label: 'Crossy', icon: Link },
+    { id: 'wordpress', label: 'WordPress', icon: ShoppingBag },
+    { id: 'files', label: 'Arquivos', icon: FolderOpen },
   ];
   const fieldBank = metadata?.fieldBank;
+
+  // Capa frontal: procura em campos do tipo 'cover' ou no campo capa_frontal
+  const coverData = (() => {
+    const d = selectedRecord.data;
+    // Procura em todos os campos por um array de imagens (cover field)
+    for (const key of Object.keys(d)) {
+      const val = d[key];
+      if (val && typeof val === 'object' && val.front) {
+        // file_compound com {front, back}
+        const f = val.front;
+        if (f && typeof f === 'string' && f.startsWith('data:')) return { base64: f, mime: f.split(';')[0].split(':')[1], filename: 'capa.jpg' };
+        if (f && f.data) return { base64: f.data, mime: f.data.split(';')[0].split(':')[1], filename: f.name || 'capa.jpg' };
+      }
+      if (Array.isArray(val) && val.length > 0) {
+        const first = val[0];
+        if (first && first.data && first.data.startsWith('data:image')) {
+          return { base64: first.data, mime: first.data.split(';')[0].split(':')[1], filename: first.name || 'capa.jpg' };
+        }
+      }
+    }
+    return null;
+  })();
 
   // Canonical data: merge all DB field aliases into unified keys used by Fichy and Crossy
   const d = selectedRecord.data;
@@ -205,9 +231,37 @@ const DetailView = ({
     doi: d.doi || d.f18 || '',
     url: d.url || d.f20 || 'https://livros.poisson.com.br/individuais/',
     nomes: d.nomes || (d.f1 || d.author ? [d.f1 || d.author].filter(Boolean) : []),
+    wp_description: d.wp_description || '',
+    wp_abstract: d.wp_abstract || '',
+    wp_area: d.wp_area || '',
+    wp_ler_online: d.wp_ler_online || '',
+    wp_data: d.wp_data || '',
+    wp_product_id: d.wp_product_id || null,
+    wp_product_url: d.wp_product_url || '',
+    wp_product_status: d.wp_product_status || 'publish',
   };
+
+  const [saveToast, setSaveToast] = useState(false);
+
+  const handleConfirm = () => {
+    api.updateRecord(selectedRecord.id, selectedRecord.data);
+    setSaveToast(true);
+    setTimeout(() => setSaveToast(false), 3000);
+  };
+
+  const handleWordPressUpdate = (updates) => {
+    const updated = { ...selectedRecord, data: { ...selectedRecord.data, ...updates } };
+    setSelectedRecord(updated);
+    setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
+    api.updateRecord(selectedRecord.id, updated.data);
+  };
+  // Caminho do DOI no gerenciador de arquivos (ex: /individuais/978-65-5866-635-6)
+  const doiFilesPath = canonicalData.doi
+    ? `/individuais/${canonicalData.doi.replace(/^.*\//, '')}`
+    : '/individuais';
+
   const getTabHasContent = (tab) => {
-    if (tab.id === 'fichy' || tab.id === 'crossref') return true;
+    if (tab.id === 'fichy' || tab.id === 'crossref' || tab.id === 'wordpress' || tab.id === 'files') return true;
     if (fieldBank && tab.rows) return tab.rows.some(r => (r || []).length > 0);
     return (tab.fields || []).length > 0;
   };
@@ -285,6 +339,19 @@ const DetailView = ({
                 api.updateRecord(selectedRecord.id, updated.data);
               }}
             />
+          ) : activeDetailTab === 'wordpress' ? (
+            <WordPressTab
+              initialData={canonicalData}
+              coverImageBase64={coverData?.base64 || null}
+              coverMime={coverData?.mime || 'image/jpeg'}
+              coverFilename={coverData?.filename || 'capa.jpg'}
+              onUpdate={handleWordPressUpdate}
+            />
+          ) : activeDetailTab === 'files' ? (
+            <FileManagerTab
+              initialPath={doiFilesPath}
+              fallbackPath="/individuais"
+            />
           ) : (
             <div className="w-full bg-[#E6E6E6] p-6 lg:p-8 rounded-b-xl md:rounded-2xl shadow-md md:border-t-[8px] border-[#1E88E5]">
 
@@ -333,9 +400,15 @@ const DetailView = ({
           )}
         </div>
 
-        <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 rounded-b-xl">
-          <Button variant="ghost" size="sm" onClick={() => setView('list')}>Fechar</Button>
-          <Button variant="primary" size="md" icon={CheckCircle2} onClick={() => setView('list')}>Confirmar Dados</Button>
+        <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-3 rounded-b-xl">
+          <div className={`transition-all duration-500 flex items-center gap-2 text-green-600 text-xs font-black ${saveToast ? 'opacity-100' : 'opacity-0'}`}>
+            <CheckCircle2 size={16} />
+            Salvo com sucesso!
+          </div>
+          <div className="flex gap-3">
+            <Button variant="ghost" size="sm" onClick={() => setView('list')}>Fechar</Button>
+            <Button variant="primary" size="md" icon={CheckCircle2} onClick={handleConfirm}>Confirmar Dados</Button>
+          </div>
         </div>
       </Card>
     </div>

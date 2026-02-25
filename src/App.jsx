@@ -11,8 +11,37 @@ import DashboardView from './views/DashboardView';
 import DetailView from './views/DetailView';
 import ConfigView from './views/ConfigView';
 import { api } from './services/api';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import LoginPage from './views/auth/LoginPage';
+import RegisterPage from './views/auth/RegisterPage';
+import { ForgotPasswordPage, ResetPasswordPage } from './views/auth/ForgotPasswordPage';
 
-export default function App() {
+function AppInner() {
+  const { user, loading } = useAuth();
+  const [authPage, setAuthPage] = useState(() => {
+    // Detecta link de reset de senha na URL
+    const params = new URLSearchParams(window.location.search);
+    return params.get('token') ? 'reset' : 'login';
+  });
+  const resetToken = new URLSearchParams(window.location.search).get('token');
+
+  if (loading) return (
+    <div className="min-h-screen bg-gradient-to-br from-[#0D1340] to-[#1a2060] flex items-center justify-center">
+      <div className="w-10 h-10 border-4 border-white/10 border-t-white rounded-full animate-spin" />
+    </div>
+  );
+
+  if (!user) {
+    if (authPage === 'register') return <RegisterPage onGoLogin={() => setAuthPage('login')} />;
+    if (authPage === 'forgot') return <ForgotPasswordPage onGoLogin={() => setAuthPage('login')} />;
+    if (authPage === 'reset') return <ResetPasswordPage token={resetToken} onGoLogin={() => { window.history.replaceState({}, '', '/'); setAuthPage('login'); }} />;
+    return <LoginPage onGoRegister={() => setAuthPage('register')} onGoForgot={() => setAuthPage('forgot')} />;
+  }
+
+  return <AppMain />;  // continua para o app principal
+}
+
+function AppMain() {
   const [view, setView] = useState('list');
   const [subView, setSubView] = useState('livros');
 
@@ -555,5 +584,13 @@ export default function App() {
         <AppFooter />
       </main>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppInner />
+    </AuthProvider>
   );
 }
