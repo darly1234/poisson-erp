@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Globe, Upload, ExternalLink, CheckCircle2, AlertCircle, BookOpen, Settings, Power } from 'lucide-react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 
 const WP_CREDS_KEY = 'poisson_wp_credentials';
 
