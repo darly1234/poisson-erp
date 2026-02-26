@@ -16,6 +16,29 @@ import LoginPage from './views/auth/LoginPage';
 import RegisterPage from './views/auth/RegisterPage';
 import { ForgotPasswordPage, ResetPasswordPage } from './views/auth/ForgotPasswordPage';
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  componentDidCatch(error, errorInfo) { console.error("React Error:", error, errorInfo); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-10 bg-red-50 text-red-800 border-2 border-red-200 rounded-xl m-10">
+          <h1 className="text-2xl font-bold mb-4">Ocorreu um erro de renderização:</h1>
+          <pre className="p-4 bg-white border border-red-100 rounded overflow-auto text-xs">
+            {this.state.error?.toString()}
+          </pre>
+          <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Recarregar Página</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function AppInner() {
   const { user, loading } = useAuth();
   const [authPage, setAuthPage] = useState(() => {
@@ -590,7 +613,9 @@ function AppMain() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppInner />
+      <ErrorBoundary>
+        <AppInner />
+      </ErrorBoundary>
     </AuthProvider>
   );
 }
