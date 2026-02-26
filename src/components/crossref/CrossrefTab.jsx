@@ -271,8 +271,25 @@ export default function CrossrefTab({ initialData, onDataSync }) {
                                         <input
                                             type="text"
                                             value={urlFolder}
-                                            onChange={e => { setUrlFolder(e.target.value); handleUrlChange({ urlFolder: e.target.value }); }}
-                                            placeholder="pasta"
+                                            onChange={e => {
+                                                const val = e.target.value.trim();
+                                                if (val.startsWith('http')) {
+                                                    const suffix = extractSuffix(val);
+                                                    const clean = suffix.toLowerCase().endsWith('.pdf') ? suffix.slice(0, -4) : suffix;
+                                                    const parts = clean.split('/');
+                                                    if (parts.length >= 2) {
+                                                        const folder = parts[0];
+                                                        const file = parts.slice(1).join('/');
+                                                        setUrlFolder(folder);
+                                                        setUrlFile(file);
+                                                        handleUrlChange({ urlFolder: folder, urlFile: file });
+                                                        return;
+                                                    }
+                                                }
+                                                setUrlFolder(val);
+                                                handleUrlChange({ urlFolder: val });
+                                            }}
+                                            placeholder="pasta ou cole a URL"
                                             className="flex-1 p-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#1E88E5] bg-white"
                                         />
                                         <span className="text-slate-400 font-mono text-sm select-none">/</span>

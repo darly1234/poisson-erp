@@ -169,6 +169,7 @@ const FieldRenderer = ({
       />
     ) : (
       <input
+        type={f.type === 'date' ? 'date' : 'text'}
         className="w-full h-11 px-4 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-[#1E88E5] transition-all shadow-sm"
         value={selectedRecord.data[f.id] || ""}
         onChange={e => {

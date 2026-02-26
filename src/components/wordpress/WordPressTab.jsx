@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Globe, Upload, ExternalLink, CheckCircle2, AlertCircle, BookOpen, Settings, Power } from 'lucide-react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 const WP_CREDS_KEY = 'poisson_wp_credentials';
 
@@ -283,11 +285,25 @@ const WordPressTab = ({ initialData, coverImageBase64, coverMime, coverFilename,
                         <h3 className="text-[11px] font-black uppercase text-[#1F2A8A] tracking-widest mb-3 flex items-center gap-2">
                             <Upload className="w-4 h-4 text-[#F57C00]" /> Descrição do Produto
                         </h3>
-                        <textarea value={description} rows={6}
-                            onChange={e => setDescription(e.target.value)}
-                            onBlur={() => save({ wp_description: description })}
-                            placeholder="Descrição exibida na página do produto WooCommerce..."
-                            className={textareaCls} />
+                        <div className="h-[250px] mb-12">
+                            <ReactQuill
+                                theme="snow"
+                                value={description}
+                                onChange={setDescription}
+                                onBlur={() => save({ wp_description: description })}
+                                placeholder="Descrição exibida na página do produto WooCommerce..."
+                                style={{ height: '200px' }}
+                                modules={{
+                                    toolbar: [
+                                        [{ 'font': [] }, { 'size': [] }],
+                                        ['bold', 'italic', 'underline', 'strike'],
+                                        [{ 'color': [] }, { 'background': [] }],
+                                        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                                        ['clean']
+                                    ],
+                                }}
+                            />
+                        </div>
                         <p className="text-[8px] text-slate-400 mt-1">Campo <code>description</code> do WooCommerce.</p>
                     </div>
                     <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
