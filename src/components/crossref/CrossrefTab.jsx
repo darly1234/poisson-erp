@@ -34,7 +34,7 @@ export default function CrossrefTab({ initialData, onDataSync }) {
         titulo: initialData.titulo || '',
         isbn: initialData.isbn || '',
         ano: initialData.ano || '',
-        editora: initialData.editora || 'Editora Poisson',
+        editora: initialData.editora || '',
         nomes: initialData.nomes || [],
         doi: initialData.doi || '',
     });
@@ -126,7 +126,7 @@ export default function CrossrefTab({ initialData, onDataSync }) {
             titulo: initialData.titulo || prev.titulo || '',
             isbn: initialData.isbn || prev.isbn || '',
             ano: initialData.ano || prev.ano || '',
-            editora: initialData.editora || prev.editora || 'Editora Poisson',
+            editora: initialData.editora || prev.editora || '',
             nomes: initialData.nomes || prev.nomes || [],
             doi: initialData.doi || prev.doi || '',
         }));

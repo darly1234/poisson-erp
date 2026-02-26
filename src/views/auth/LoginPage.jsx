@@ -14,7 +14,19 @@ export default function LoginPage({ onGoRegister, onGoForgot }) {
         e.preventDefault();
         setLoading(true); setError('');
         try {
-            await login(email, password);
+            const siteKey = process.env.REACT_APP_RECAPTCHA_SITE_KEY;
+            let token = '';
+
+            if (window.grecaptcha) {
+                token = await new Promise((resolve) => {
+                    window.grecaptcha.ready(async () => {
+                        const t = await window.grecaptcha.execute(siteKey, { action: 'login' });
+                        resolve(t);
+                    });
+                });
+            }
+
+            await login(email, password, token);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -33,7 +45,7 @@ export default function LoginPage({ onGoRegister, onGoForgot }) {
             <div className="relative w-full max-w-md">
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#1E88E5] to-[#1F2A8A] rounded-2xl shadow-2xl shadow-blue-900/50 mb-4">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-amber-400 to-[#F57C00] rounded-2xl shadow-2xl shadow-orange-900/50 mb-4 transform -rotate-3">
                         <BookOpen className="w-8 h-8 text-white" />
                     </div>
                     <h1 className="text-3xl font-black text-white tracking-tighter">Poisson ERP</h1>

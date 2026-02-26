@@ -33,12 +33,12 @@ export function AuthProvider({ children }) {
         refresh().finally(() => setLoading(false));
     }, [refresh]);
 
-    const login = async (email, password) => {
+    const login = async (email, password, recaptchaToken) => {
         try {
             const r = await fetch(`${API}/auth/login`, {
                 method: 'POST', credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ email, password, recaptchaToken }),
             });
             const d = await r.json();
             if (!r.ok) throw new Error(d.message || 'Erro ao fazer login.');
@@ -52,12 +52,12 @@ export function AuthProvider({ children }) {
         }
     };
 
-    const register = async (name, email, password) => {
+    const register = async (name, email, password, recaptchaToken) => {
         try {
             const r = await fetch(`${API}/auth/register`, {
                 method: 'POST', credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password }),
+                body: JSON.stringify({ name, email, password, recaptchaToken }),
             });
             const d = await r.json();
             if (!r.ok) throw new Error(d.message || 'Erro ao criar conta.');

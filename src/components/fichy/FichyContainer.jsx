@@ -8,23 +8,23 @@ import { loadHtml2Canvas, handleExportPNG, handleExportWord } from './exportUtil
 
 export default function FichyContainer({ initialData = {}, onDataSync }) {
     const [formData, setFormData] = useState({
-        titulo: initialData.f_title || initialData.titulo || initialData.title || 'Proposições de saberes na Administração – Volume 2',
+        titulo: initialData.f_title || initialData.titulo || initialData.title || '',
         subtitulo: initialData.subtitulo || '',
-        responsabilidade: initialData.responsabilidade || 'organizador',
-        nomes: initialData.nomes || ['Wenderson Pinto Farias'],
+        responsabilidade: initialData.responsabilidade || 'autor',
+        nomes: initialData.nomes || [''],
         local: initialData.local || 'Belo Horizonte',
         uf: initialData.uf || 'MG',
         editora: initialData.editora || 'Editora Poisson',
-        ano: initialData.ano || '2026',
+        ano: initialData.ano || new Date().getFullYear().toString(),
         paginas: initialData.paginas || '',
         formato: initialData.formato || 'PDF',
-        isbn: initialData.isbn || '978-65-5866-628-8',
-        doi: initialData.doi || '10.36229/978-65-5866-628-8',
+        isbn: initialData.isbn || '',
+        doi: initialData.doi || '10.36229/',
         modoAcesso: initialData.modoAcesso || 'World Wide Web',
         incluiBibliografia: initialData.incluiBibliografia ?? true,
-        cdd: initialData.cdd || '658',
-        cutter: initialData.cutter || 'F224p',
-        palavrasChave: initialData.palavrasChave || ['Gestão', 'Administração'],
+        cdd: initialData.cdd || '',
+        cutter: initialData.cutter || '',
+        palavrasChave: initialData.palavrasChave || [''],
         bibliotecaria: initialData.bibliotecaria || 'Sônia Márcia Soares de Moura',
         crb: initialData.crb || '6/1896'
     });

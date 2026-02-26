@@ -263,12 +263,12 @@ const WordPressTab = ({ initialData, coverImageBase64, coverMime, coverFilename,
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {[
-                            { k: 'citation_journal_title', v: 'Editora Poisson' },
+                            { k: 'citation_journal_title', v: initialData.editora || '' },
                             { k: 'citation_title', v: initialData.titulo || '—' },
                             { k: 'citation_author', v: autores || '—' },
                             { k: 'citation_isbn', v: initialData.isbn || '—' },
                             { k: 'citation_doi', v: initialData.doi || '—' },
-                            { k: 'citation_date', v: anoAtual },
+                            { k: 'citation_date', v: initialData.ano || '' },
                             { k: 'citation_pdf_url', v: citationPdfUrl || '—' },
                         ].map(({ k, v }) => (
                             <div key={k} className="bg-slate-50 rounded-xl p-2.5 border border-slate-100">

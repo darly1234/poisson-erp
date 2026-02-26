@@ -31,7 +31,7 @@ export function ForgotPasswordPage({ onGoLogin }) {
             </div>
             <div className="relative w-full max-w-md">
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#1E88E5] to-[#1F2A8A] rounded-2xl shadow-2xl shadow-blue-900/50 mb-4">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-amber-400 to-[#F57C00] rounded-2xl shadow-2xl shadow-orange-900/50 mb-4 transform -rotate-3">
                         <BookOpen className="w-8 h-8 text-white" />
                     </div>
                     <h1 className="text-3xl font-black text-white tracking-tighter">Esqueceu a Senha?</h1>
@@ -108,7 +108,7 @@ export function ResetPasswordPage({ token, onGoLogin }) {
         <div className="min-h-screen bg-gradient-to-br from-[#0D1340] via-[#1a2060] to-[#0a0f2e] flex items-center justify-center p-4">
             <div className="relative w-full max-w-md">
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#1E88E5] to-[#1F2A8A] rounded-2xl shadow-2xl shadow-blue-900/50 mb-4">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-amber-400 to-[#F57C00] rounded-2xl shadow-2xl shadow-orange-900/50 mb-4 transform -rotate-3">
                         <BookOpen className="w-8 h-8 text-white" />
                     </div>
                     <h1 className="text-3xl font-black text-white tracking-tighter">Nova Senha</h1>
