@@ -12,7 +12,7 @@ const extractSuffix = (fullUrl) => {
     return fullUrl; // legacy: keep as-is so no data is lost
 };
 
-export default function CrossrefTab({ initialData }) {
+export default function CrossrefTab({ initialData, onDataSync }) {
     const [xmlContent, setXmlContent] = useState('');
     const [credentials, setCredentials] = useState({ login_id: 'pois', login_passwd: 'po_4719_arv' });
     const [showPassword, setShowPassword] = useState(false);
@@ -148,6 +148,17 @@ export default function CrossrefTab({ initialData }) {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        onDataSync?.({ [name]: value });
+    };
+
+    const handleUrlChange = (updates) => {
+        // Compute the new full URL to sync it
+        const newFolder = updates.urlFolder !== undefined ? updates.urlFolder : urlFolder;
+        const newFile = updates.urlFile !== undefined ? updates.urlFile : urlFile;
+        const newFullUrl = (newFolder.trim() && newFile.trim())
+            ? `https://livros.poisson.com.br/individuais/${newFolder.trim()}/${newFile.trim()}.pdf`
+            : '';
+        onDataSync?.({ url: newFullUrl });
     };
 
     const showMessage = (text, type = 'success') => {
@@ -182,7 +193,7 @@ export default function CrossrefTab({ initialData }) {
 
         try {
             // Note: Update URL below depending on env variable once in prod
-            const apiUrl = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5000/api');
+            const apiUrl = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:3001/api');
             const response = await fetch(`${apiUrl}/crossref/deposit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -247,7 +258,7 @@ export default function CrossrefTab({ initialData }) {
                                         <input
                                             type="text"
                                             value={urlFolder}
-                                            onChange={e => setUrlFolder(e.target.value)}
+                                            onChange={e => { setUrlFolder(e.target.value); handleUrlChange({ urlFolder: e.target.value }); }}
                                             placeholder="pasta"
                                             className="flex-1 p-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#1E88E5] bg-white"
                                         />
@@ -255,7 +266,7 @@ export default function CrossrefTab({ initialData }) {
                                         <input
                                             type="text"
                                             value={urlFile}
-                                            onChange={e => setUrlFile(e.target.value)}
+                                            onChange={e => { setUrlFile(e.target.value); handleUrlChange({ urlFile: e.target.value }); }}
                                             placeholder="nome-do-arquivo"
                                             className="flex-1 min-w-[120px] p-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#1E88E5] bg-white"
                                         />
@@ -299,7 +310,7 @@ export default function CrossrefTab({ initialData }) {
                                             <input
                                                 type="text"
                                                 value={urlFolder}
-                                                onChange={e => setUrlFolder(e.target.value)}
+                                                onChange={e => { setUrlFolder(e.target.value); handleUrlChange({ urlFolder: e.target.value }); }}
                                                 placeholder="pasta"
                                                 className="flex-1 min-w-[80px] p-1.5 text-xs border border-slate-300 rounded outline-none focus:ring-2 focus:ring-[#1E88E5] bg-slate-50"
                                             />
@@ -307,7 +318,7 @@ export default function CrossrefTab({ initialData }) {
                                             <input
                                                 type="text"
                                                 value={urlFile}
-                                                onChange={e => setUrlFile(e.target.value)}
+                                                onChange={e => { setUrlFile(e.target.value); handleUrlChange({ urlFile: e.target.value }); }}
                                                 placeholder="nome-do-pdf"
                                                 className="flex-1 min-w-[80px] p-1.5 text-xs border border-slate-300 rounded outline-none focus:ring-2 focus:ring-[#1E88E5] bg-slate-50"
                                             />
