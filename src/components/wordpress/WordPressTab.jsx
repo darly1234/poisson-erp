@@ -72,7 +72,7 @@ const WordPressTab = ({ initialData, coverImageBase64, coverMime, coverFilename,
     // ler-online = pasta do pdf (url sem o nome do arquivo)
     const lerOnlineAuto = (() => {
         const u = initialData.url || '';
-        if (!u) return '';
+        if (typeof u !== 'string') return '';
         if (u.endsWith('/')) return u;
         const lastSlash = u.lastIndexOf('/');
         const segment = u.substring(lastSlash + 1);

@@ -7,7 +7,7 @@ const URL_BASE = 'https://livros.poisson.com.br/individuais/';
 
 // Extract just the suffix after URL_BASE, or return the raw value if it doesn't match
 const extractSuffix = (fullUrl) => {
-    if (!fullUrl) return '';
+    if (!fullUrl || typeof fullUrl !== 'string') return '';
     if (fullUrl.startsWith(URL_BASE)) return fullUrl.slice(URL_BASE.length);
     return fullUrl; // legacy: keep as-is so no data is lost
 };
