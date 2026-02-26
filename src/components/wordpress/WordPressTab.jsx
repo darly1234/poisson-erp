@@ -84,7 +84,7 @@ const WordPressTab = ({ initialData, coverImageBase64, coverMime, coverFilename,
         const newStatus = productStatus === 'publish' ? 'draft' : 'publish';
         setIsTogglingStatus(true);
         try {
-            const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+            const apiUrl = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:3001/api');
             const r = await fetch(`${apiUrl}/wordpress/set-status`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -129,7 +129,7 @@ const WordPressTab = ({ initialData, coverImageBase64, coverMime, coverFilename,
         setStatusMsg({ text: 'Publicando no WordPress...', type: 'info' });
 
         try {
-            const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+            const apiUrl = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:3001/api');
             const response = await fetch(`${apiUrl}/wordpress/publish`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

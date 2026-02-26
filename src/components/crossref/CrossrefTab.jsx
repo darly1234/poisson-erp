@@ -182,7 +182,7 @@ export default function CrossrefTab({ initialData }) {
 
         try {
             // Note: Update URL below depending on env variable once in prod
-            const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+            const apiUrl = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5000/api');
             const response = await fetch(`${apiUrl}/crossref/deposit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
