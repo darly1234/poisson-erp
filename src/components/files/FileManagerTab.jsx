@@ -4,7 +4,7 @@ import {
     ChevronRight, Home, RefreshCw, Download, AlertCircle, Loader2, X, Copy, Link2, ExternalLink
 } from 'lucide-react';
 
-const API = (process.env.REACT_APP_API_URL || 'http://localhost:3001/api') + '/files';
+const API = (process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:3001/api')) + '/files';
 const SSH_CREDS_KEY = 'poisson_ssh_credentials';
 
 const getSshHeaders = () => {
