@@ -1,4 +1,4 @@
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const API_URL = process.env.NODE_ENV === 'production' ? '/api' : (process.env.REACT_APP_API_URL || 'http://localhost:3001/api');
 
 const fetchWithAuth = async (endpoint, options = {}) => {
   const token = sessionStorage.getItem('access_token');
