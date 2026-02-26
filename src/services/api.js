@@ -14,8 +14,6 @@ const fetchWithAuth = async (endpoint, options = {}) => {
   });
 
   if (res.status === 401) {
-    // Se der 401, o AuthContext.refresh() tratará o silent login e um reload pode ser necessário,
-    // mas por hora, forçamos um erro para ir para fallback visual ou redirecionar.
     throw new Error('Não autorizado (401). Faça login novamente.');
   }
 
@@ -45,5 +43,11 @@ export const api = {
     const formData = new FormData();
     formData.append('file', file);
     return fetchWithAuth('/backup/import', { method: 'POST', body: formData });
+  },
+  uploadFile: (id, file) => {
+    const formData = new FormData();
+    formData.append('id', id);
+    formData.append('file', file);
+    return fetchWithAuth('/upload', { method: 'POST', body: formData });
   }
 };

@@ -77,17 +77,14 @@ const ListView = ({
             <Button variant="outline" size="sm" icon={Columns} onClick={() => setShowColumnManager(!showColumnManager)}>Colunas</Button>
             <Button variant="excel" size="sm" icon={Download} onClick={handleExportExcel}>Excel</Button>
             <Button variant="primary" size="sm" icon={Plus} onClick={() => {
-              const nextIdNum = records.length > 0 ? Math.max(...records.map(r => parseInt(r.id.split('-')[1]) || 0)) + 1 : 1;
-
-              const newRec = { id: `I-${String(nextIdNum).padStart(3, '0')}`, data: {} };
-              api.createRecord({ id: newRec.id, data: {} }).then(() => {
-                setRecords(prev => [newRec, ...prev]);
-                handleOpenDetail(newRec);
-              });
-
-
-
-
+              // No Modo Draft, não salvamos no banco agora.
+              // Criamos um rascunho temporário com isNew: true
+              const draftRecord = {
+                id: 'NOVO-LIVRO',
+                data: {},
+                isNew: true
+              };
+              handleOpenDetail(draftRecord);
             }}>Novo Livro</Button>
           </div>
         </div>

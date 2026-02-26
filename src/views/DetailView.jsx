@@ -71,12 +71,14 @@ const FieldRenderer = ({
       />
     ) : f.type === 'workflow' ? (
       <WorkflowField
+        recordId={selectedRecord.id}
+        isNew={selectedRecord.isNew}
         value={selectedRecord.data[f.id]}
         onChange={next => {
           const updated = { ...selectedRecord, data: { ...selectedRecord.data, [f.id]: next } };
           setSelectedRecord(updated);
           setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
-          api.updateRecord(selectedRecord.id, updated.data);
+          if (!selectedRecord.isNew) api.updateRecord(selectedRecord.id, updated.data);
         }}
       />
     ) : f.type === 'cover' ? (
@@ -127,17 +129,19 @@ const FieldRenderer = ({
                     <button
                       onClick={(e) => {
                         e.preventDefault();
-                        if (fileData) {
+                        if (fileObj.url) {
+                          window.open(fileObj.url, '_blank');
+                        } else if (fileData) {
                           const link = document.createElement('a');
                           link.href = fileData;
                           link.download = fileName;
                           link.click();
                         } else {
-                          alert('Este arquivo é apenas um registro textual (mock) legado e não possui conteúdo para download.');
+                          alert('Este arquivo não possui link válido para download.');
                         }
                       }}
                       className="p-1.5 text-orange-500 bg-orange-50 hover:bg-orange-100 hover:text-orange-600 rounded transition-colors"
-                      title="Fazer Download"
+                      title="Visualizar/Download"
                     >
                       <Download size={14} />
                     </button>
@@ -244,10 +248,37 @@ const DetailView = ({
 
   const [saveToast, setSaveToast] = useState(false);
 
-  const handleConfirm = () => {
-    api.updateRecord(selectedRecord.id, selectedRecord.data);
-    setSaveToast(true);
-    setTimeout(() => setSaveToast(false), 3000);
+  const handleConfirm = async () => {
+    // 1. Validação de Título Obrigatório
+    if (!canonicalData.titulo || canonicalData.titulo.trim() === '') {
+      alert("⚠️ Erro: O Título da Obra é obrigatório para salvar!");
+      return;
+    }
+
+    try {
+      if (selectedRecord.isNew) {
+        // 2. Gerar ID real baseado no maior ID existente
+        const nextIdNum = records.length > 0 ? Math.max(...records.map(r => parseInt(r.id.split('-')[1]) || 0)) + 1 : 1;
+        const newId = `I-${String(nextIdNum).padStart(3, '0')}`;
+
+        const finalRecord = { ...selectedRecord, id: newId };
+        delete finalRecord.isNew;
+
+        await api.createRecord({ id: finalRecord.id, data: finalRecord.data });
+
+        setRecords(prev => [finalRecord, ...prev]);
+        setSelectedRecord(finalRecord);
+        setSaveToast(true);
+      } else {
+        // 3. Atualizar registro existente
+        await api.updateRecord(selectedRecord.id, selectedRecord.data);
+        setSaveToast(true);
+      }
+      setTimeout(() => setSaveToast(false), 3000);
+    } catch (err) {
+      console.error('Erro ao salvar:', err);
+      alert('Erro ao salvar os dados no servidor.');
+    }
   };
 
   const handleWordPressUpdate = (updates) => {

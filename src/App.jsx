@@ -394,38 +394,50 @@ function AppMain() {
     setDragActiveFieldId(null);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const files = Array.from(e.dataTransfer.files);
-      const newFilesPromises = files.map(f => {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve({ name: f.name, data: reader.result });
-          reader.readAsDataURL(f);
-        });
-      });
-      const newFilesBase = await Promise.all(newFilesPromises);
+      const isNew = selectedRecord?.isNew;
+      const recordId = isNew ? 'DRAFT' : selectedRecord?.id;
 
-      const currentFiles = Array.isArray(selectedRecord.data[fieldId]) ? selectedRecord.data[fieldId] : [];
-      const updated = { ...selectedRecord, data: { ...selectedRecord.data, [fieldId]: [...currentFiles, ...newFilesBase] } };
-      setSelectedRecord(updated);
-      setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
+      try {
+        const uploadPromises = files.map(f => api.uploadFile(recordId, f));
+        const uploadedFiles = await Promise.all(uploadPromises);
+
+        const currentFiles = Array.isArray(selectedRecord.data[fieldId]) ? selectedRecord.data[fieldId] : [];
+        const newFilesList = uploadedFiles.map(res => ({ name: res.name, url: res.url }));
+
+        const updated = { ...selectedRecord, data: { ...selectedRecord.data, [fieldId]: [...currentFiles, ...newFilesList] } };
+        setSelectedRecord(updated);
+        setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
+
+        if (!isNew && selectedRecord?.id) api.updateRecord(selectedRecord.id, updated.data);
+      } catch (err) {
+        console.error('Upload failed:', err);
+        alert('Falha ao enviar arquivo de anexo.');
+      }
     }
   };
 
   const handleFileSelection = async (e, fieldId) => {
     if (e.target.files && e.target.files.length > 0) {
       const files = Array.from(e.target.files);
-      const newFilesPromises = files.map(f => {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve({ name: f.name, data: reader.result });
-          reader.readAsDataURL(f);
-        });
-      });
-      const newFilesBase = await Promise.all(newFilesPromises);
+      const isNew = selectedRecord?.isNew;
+      const recordId = isNew ? 'DRAFT' : selectedRecord?.id;
 
-      const currentFiles = Array.isArray(selectedRecord.data[fieldId]) ? selectedRecord.data[fieldId] : [];
-      const updated = { ...selectedRecord, data: { ...selectedRecord.data, [fieldId]: [...currentFiles, ...newFilesBase] } };
-      setSelectedRecord(updated);
-      setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
+      try {
+        const uploadPromises = files.map(f => api.uploadFile(recordId, f));
+        const uploadedFiles = await Promise.all(uploadPromises);
+
+        const currentFiles = Array.isArray(selectedRecord.data[fieldId]) ? selectedRecord.data[fieldId] : [];
+        const newFilesList = uploadedFiles.map(res => ({ name: res.name, url: res.url }));
+
+        const updated = { ...selectedRecord, data: { ...selectedRecord.data, [fieldId]: [...currentFiles, ...newFilesList] } };
+        setSelectedRecord(updated);
+        setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
+
+        if (!isNew && selectedRecord?.id) api.updateRecord(selectedRecord.id, updated.data);
+      } catch (err) {
+        console.error('Upload failed:', err);
+        alert('Falha ao enviar arquivo de anexo.');
+      }
     }
   };
 

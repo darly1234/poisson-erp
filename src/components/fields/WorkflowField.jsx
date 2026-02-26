@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Calendar, CheckCircle2, Circle, Upload, FileUp, ListOrdered, GripVertical, File, Download } from 'lucide-react';
+import { api } from '../../services/api';
 
 const DEFAULT_STAGES = [
     'Para Editar',
@@ -22,7 +23,7 @@ const createEmptyStage = (title = 'Nova Etapa') => ({
     skipChanges: false
 });
 
-const WorkflowField = ({ value, onChange }) => {
+const WorkflowField = ({ value, onChange, recordId, isNew }) => {
     // Inicialização Lazy: preenche com estágios padrão caso seja nulo/vazio
     const stages = Array.isArray(value) && value.length > 0
         ? value
@@ -66,26 +67,27 @@ const WorkflowField = ({ value, onChange }) => {
     };
 
     // Pseudo-Lógica de Upload do Workflow (Simula a do ERP com Base64 para download)
-    const handleFileUpload = (e, stageIdx, fileListKey = 'files') => {
+    const handleFileUpload = async (e, stageIdx, fileListKey = 'files') => {
         const files = Array.from(e.target.files);
         if (files.length === 0) return;
 
         const currentFiles = stages[stageIdx][fileListKey] || [];
+        const uploadId = isNew ? 'DRAFT' : recordId;
 
-        // Simulating immediate base64 conversion for new files so they can be downloaded right away
-        const newFilesPromises = files.map(f => {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    resolve({ name: f.name, data: reader.result });
-                };
-                reader.readAsDataURL(f);
-            });
-        });
+        try {
+            const uploadPromises = files.map(f => api.uploadFile(uploadId, f));
+            const uploadedResults = await Promise.all(uploadPromises);
 
-        Promise.all(newFilesPromises).then(newFilesBase => {
-            updateStage(stageIdx, { [fileListKey]: [...currentFiles, ...newFilesBase] });
-        });
+            const newFiles = uploadedResults.map(res => ({
+                name: res.name,
+                url: res.url
+            }));
+
+            updateStage(stageIdx, { [fileListKey]: [...currentFiles, ...newFiles] });
+        } catch (err) {
+            console.error('Workflow upload failed:', err);
+            alert('Falha ao enviar arquivo para o workflow.');
+        }
     };
 
     const removeFile = (stageIdx, fileToRemove, fileListKey = 'files') => {
@@ -267,17 +269,19 @@ const WorkflowField = ({ value, onChange }) => {
                                                                     <button
                                                                         onClick={(e) => {
                                                                             e.preventDefault(); e.stopPropagation();
-                                                                            if (fileData) {
+                                                                            if (file.url) {
+                                                                                window.open(file.url, '_blank');
+                                                                            } else if (fileData) {
                                                                                 const link = document.createElement('a');
                                                                                 link.href = fileData;
                                                                                 link.download = fileName;
                                                                                 link.click();
                                                                             } else {
-                                                                                alert('Este arquivo é apenas um registro textual (mock) legado e não possui conteúdo para download.');
+                                                                                alert('Este arquivo não possui link válido para download.');
                                                                             }
                                                                         }}
                                                                         className="p-1 text-orange-500 bg-orange-50 hover:bg-orange-100 hover:text-orange-600 shrink-0 ml-1 rounded transition-colors"
-                                                                        title="Fazer download"
+                                                                        title="Visualizar/Download"
                                                                     >
                                                                         <Download size={12} />
                                                                     </button>
@@ -329,17 +333,19 @@ const WorkflowField = ({ value, onChange }) => {
                                                                         <button
                                                                             onClick={(e) => {
                                                                                 e.preventDefault(); e.stopPropagation();
-                                                                                if (fileData) {
+                                                                                if (file.url) {
+                                                                                    window.open(file.url, '_blank');
+                                                                                } else if (fileData) {
                                                                                     const link = document.createElement('a');
                                                                                     link.href = fileData;
                                                                                     link.download = fileName;
                                                                                     link.click();
                                                                                 } else {
-                                                                                    alert('Este arquivo é apenas um registro textual (mock) legado e não possui conteúdo para download.');
+                                                                                    alert('Este arquivo não possui link válido para download.');
                                                                                 }
                                                                             }}
                                                                             className="p-1 text-orange-500 bg-orange-50 hover:bg-orange-100 hover:text-orange-600 shrink-0 ml-1 rounded transition-colors"
-                                                                            title="Fazer download"
+                                                                            title="Visualizar/Download"
                                                                         >
                                                                             <Download size={12} />
                                                                         </button>
