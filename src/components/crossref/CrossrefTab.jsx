@@ -119,17 +119,30 @@ export default function CrossrefTab({ initialData, onDataSync }) {
     if (!fullUrl) missingFields.push('URL (Link da Publicação)');
 
     // Sync formData whenever the parent provides updated initialData (e.g. after Fichy edit)
+    // But ONLY if the content actually changed or name values are missing to avoid cursor reset issues
     useEffect(() => {
-        setFormData({
-            titulo: initialData.titulo || '',
-            isbn: initialData.isbn || '',
-            ano: initialData.ano || '',
-            editora: initialData.editora || 'Editora Poisson',
-            nomes: initialData.nomes || [],
-            doi: initialData.doi || '',
-        });
-        setUrlFolder('');
-        setUrlFile('');
+        setFormData(prev => ({
+            ...prev,
+            titulo: initialData.titulo || prev.titulo || '',
+            isbn: initialData.isbn || prev.isbn || '',
+            ano: initialData.ano || prev.ano || '',
+            editora: initialData.editora || prev.editora || 'Editora Poisson',
+            nomes: initialData.nomes || prev.nomes || [],
+            doi: initialData.doi || prev.doi || '',
+        }));
+
+        // Only set URL parts if we don't have them yet and initialData has a URL
+        if (!urlFolder && !urlFile && initialData.url && typeof initialData.url === 'string') {
+            const raw = extractSuffix(initialData.url);
+            const clean = raw.toLowerCase().endsWith('.pdf') ? raw.slice(0, -4) : raw;
+            const parts = clean.split('/');
+            if (parts.length >= 2) {
+                setUrlFolder(parts[0]);
+                setUrlFile(parts[1]);
+            } else if (parts.length === 1 && parts[0]) {
+                setUrlFile(parts[0]);
+            }
+        }
     }, [initialData]);
 
     useEffect(() => {
