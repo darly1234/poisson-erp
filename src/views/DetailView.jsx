@@ -20,7 +20,7 @@ const ICON_MAP = { Info, BookOpen, Wallet, Database: Folder, User: Info };
 
 const FieldRenderer = ({
   f, selectedRecord, setSelectedRecord, records, setRecords, dragActiveFieldId,
-  handleDrag, handleDrop, handleFileSelection, removeFile
+  handleDrag, handleDrop, handleFileSelection, removeFile, setConfirmModal
 }) => {
   const handleChange = (newValue) => {
     const updated = { ...selectedRecord, data: { ...selectedRecord.data, [f.id]: newValue } };
@@ -209,23 +209,22 @@ const DetailView = ({
   })();
 
   // Canonical data: merge all DB field aliases into unified keys used by Fichy and Crossy
-  const d = selectedRecord.data;
   const canonicalData = {
-    titulo: d.titulo || d.f_title || d.title || d.f6 || '',
-    isbn: d.isbn || d.f7 || '',
-    ano: d.ano || d.f11 || '',
-    editora: d.editora || d.f10 || 'Editora Poisson',
-    doi: (typeof d.doi === 'string' ? d.doi : '') || (typeof d.f_doi === 'string' ? d.f_doi : '') || (typeof d.f18 === 'string' ? d.f18 : '') || '',
-    url: (typeof d.url === 'string' ? d.url : '') || (typeof d.f_url === 'string' ? d.f_url : '') || (typeof d.f20 === 'string' ? d.f20 : '') || 'https://livros.poisson.com.br/individuais/',
-    nomes: d.nomes || (d.f1 || d.author ? [d.f1 || d.author].filter(Boolean) : []),
-    wp_description: d.wp_description || '',
-    wp_abstract: d.wp_abstract || '',
-    wp_area: d.wp_area || '',
-    wp_ler_online: d.wp_ler_online || '',
-    wp_data: d.wp_data || '',
-    wp_product_id: d.wp_product_id || null,
-    wp_product_url: d.wp_product_url || '',
-    wp_product_status: d.wp_product_status || 'publish',
+    titulo: selectedRecord.data.titulo || selectedRecord.data.f_title || selectedRecord.data.title || selectedRecord.data.f6 || '',
+    isbn: selectedRecord.data.isbn || selectedRecord.data.f7 || '',
+    ano: selectedRecord.data.ano || selectedRecord.data.f11 || '',
+    editora: selectedRecord.data.editora || selectedRecord.data.f10 || 'Editora Poisson',
+    doi: (typeof selectedRecord.data.doi === 'string' ? selectedRecord.data.doi : '') || (typeof selectedRecord.data.f_doi === 'string' ? selectedRecord.data.f_doi : '') || (typeof selectedRecord.data.f18 === 'string' ? selectedRecord.data.f18 : '') || '',
+    url: (typeof selectedRecord.data.url === 'string' ? selectedRecord.data.url : '') || (typeof selectedRecord.data.f_url === 'string' ? selectedRecord.data.f_url : '') || (typeof selectedRecord.data.f20 === 'string' ? selectedRecord.data.f20 : '') || 'https://livros.poisson.com.br/individuais/',
+    nomes: selectedRecord.data.nomes || (selectedRecord.data.f1 || selectedRecord.data.author ? [selectedRecord.data.f1 || selectedRecord.data.author].filter(Boolean) : []),
+    wp_description: selectedRecord.data.wp_description || '',
+    wp_abstract: selectedRecord.data.wp_abstract || '',
+    wp_area: selectedRecord.data.wp_area || '',
+    wp_ler_online: selectedRecord.data.wp_ler_online || '',
+    wp_data: selectedRecord.data.wp_data || '',
+    wp_product_id: selectedRecord.data.wp_product_id || null,
+    wp_product_url: selectedRecord.data.wp_product_url || '',
+    wp_product_status: selectedRecord.data.wp_product_status || 'publish',
   };
 
   const [saveToast, setSaveToast] = useState(false);
@@ -412,6 +411,7 @@ const DetailView = ({
                             handleDrop={handleDrop}
                             handleFileSelection={handleFileSelection}
                             removeFile={removeFile}
+                            setConfirmModal={setConfirmModal}
                           />
                         </div>
                       ) : null
