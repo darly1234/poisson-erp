@@ -15,8 +15,27 @@ const SSH_CREDS_KEY = 'poisson_ssh_credentials';
 const TemplateSection = ({ handleInputInteraction }) => {
   const [webhookUrl, setWebhookUrl] = useState('');
   const [templates, setTemplates] = useState([]);
+  const [smtpConfig, setSmtpConfig] = useState({
+    host: '',
+    port: '587',
+    user: '',
+    pass: '',
+    from_name: 'Poisson ERP',
+    from_email: ''
+  });
+  const [systemTemplates, setSystemTemplates] = useState({
+    password_reset: {
+      subject: 'Redefinição de senha — Poisson ERP',
+      content: 'Olá, clique no link para redefinir sua senha: {{reset_url}}'
+    },
+    login_code: {
+      subject: 'Seu código de acesso — Poisson ERP',
+      content: 'Seu código de acesso é: {{code}}'
+    }
+  });
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [showSmtpPass, setShowSmtpPass] = useState(false);
 
   React.useEffect(() => {
     async function load() {
@@ -24,6 +43,8 @@ const TemplateSection = ({ handleInputInteraction }) => {
         const settings = await api.getSettings();
         setWebhookUrl(settings.n8n_webhook_url?.url || '');
         setTemplates(settings.message_templates || []);
+        if (settings.smtp_config) setSmtpConfig(settings.smtp_config);
+        if (settings.system_templates) setSystemTemplates(settings.system_templates);
       } catch (err) {
         console.error(err);
       } finally {
@@ -37,6 +58,8 @@ const TemplateSection = ({ handleInputInteraction }) => {
     try {
       await api.saveSettings('n8n_webhook_url', { url: webhookUrl });
       await api.saveSettings('message_templates', templates);
+      await api.saveSettings('smtp_config', smtpConfig);
+      await api.saveSettings('system_templates', systemTemplates);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
@@ -128,9 +151,133 @@ const TemplateSection = ({ handleInputInteraction }) => {
         </div>
       </div>
 
-      <Button size="md" variant="primary" icon={Save} onClick={save}>
-        {saved ? 'Salvo! ✓' : 'Salvar Configurações'}
-      </Button>
+      <div className="flex items-center gap-2 pt-10 pb-4 border-b border-slate-100">
+        <Mail className="w-5 h-5 text-[#F57C00]" />
+        <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">E-mail de Sistema (SMTP)</h3>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
+        <div className="space-y-1">
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Servidor SMTP (Host)</label>
+          <input
+            type="text"
+            value={smtpConfig.host}
+            onChange={e => setSmtpConfig({ ...smtpConfig, host: e.target.value })}
+            placeholder="smtp.gmail.com"
+            className="w-full h-11 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-blue-500 transition-all font-mono"
+            onKeyDown={handleInputInteraction}
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Porta</label>
+          <input
+            type="text"
+            value={smtpConfig.port}
+            onChange={e => setSmtpConfig({ ...smtpConfig, port: e.target.value })}
+            placeholder="587"
+            className="w-full h-11 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-blue-500 transition-all font-mono"
+            onKeyDown={handleInputInteraction}
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Usuário SMTP</label>
+          <input
+            type="text"
+            value={smtpConfig.user}
+            onChange={e => setSmtpConfig({ ...smtpConfig, user: e.target.value })}
+            placeholder="contato@exemplo.com"
+            className="w-full h-11 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-blue-500 transition-all font-mono"
+            onKeyDown={handleInputInteraction}
+          />
+        </div>
+        <div className="space-y-1 relative">
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Senha SMTP</label>
+          <input
+            type={showSmtpPass ? "text" : "password"}
+            value={smtpConfig.pass}
+            onChange={e => setSmtpConfig({ ...smtpConfig, pass: e.target.value })}
+            placeholder="••••••••••••"
+            className="w-full h-11 px-3 pr-10 bg-white border border-slate-200 rounded-xl text-xs font-mono outline-none focus:border-blue-500 transition-all"
+            onKeyDown={handleInputInteraction}
+          />
+          <button type="button" onClick={() => setShowSmtpPass(!showSmtpPass)} className="absolute right-3 top-[34px] text-slate-300 hover:text-slate-600">
+            {showSmtpPass ? <EyeOff size={14} /> : <Eye size={14} />}
+          </button>
+        </div>
+        <div className="space-y-1">
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">E-mail Remetente</label>
+          <input
+            type="email"
+            value={smtpConfig.from_email}
+            onChange={e => setSmtpConfig({ ...smtpConfig, from_email: e.target.value })}
+            placeholder="no-reply@poisson.com.br"
+            className="w-full h-11 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-blue-500 transition-all font-mono"
+            onKeyDown={handleInputInteraction}
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Nome Remetente</label>
+          <input
+            type="text"
+            value={smtpConfig.from_name}
+            onChange={e => setSmtpConfig({ ...smtpConfig, from_name: e.target.value })}
+            placeholder="Poisson ERP"
+            className="w-full h-11 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-blue-500 transition-all"
+            onKeyDown={handleInputInteraction}
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 pt-10 pb-4 border-b border-slate-100">
+        <Layout className="w-5 h-5 text-[#F57C00]" />
+        <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Modelos do Sistema</h3>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-8">
+        <div className="p-6 bg-blue-50/30 border border-blue-100/50 rounded-3xl space-y-4">
+          <h4 className="text-[11px] font-black text-blue-900 uppercase tracking-widest">Recuperação de Senha</h4>
+          <div className="space-y-2">
+            <input
+              className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-blue-500"
+              value={systemTemplates.password_reset.subject}
+              onChange={e => setSystemTemplates({ ...systemTemplates, password_reset: { ...systemTemplates.password_reset, subject: e.target.value } })}
+              placeholder="Assunto"
+            />
+            <textarea
+              rows={4}
+              className="w-full p-3 bg-white border border-slate-200 rounded-xl text-[11px] font-medium outline-none focus:border-blue-500 resize-none"
+              value={systemTemplates.password_reset.content}
+              onChange={e => setSystemTemplates({ ...systemTemplates, password_reset: { ...systemTemplates.password_reset, content: e.target.value } })}
+            />
+            <p className="text-[9px] text-slate-400 italic">Variável disponível: <code className="font-bold text-blue-600">{"{{reset_url}}"}</code></p>
+          </div>
+        </div>
+
+        <div className="p-6 bg-amber-50/30 border border-amber-100/50 rounded-3xl space-y-4">
+          <h4 className="text-[11px] font-black text-amber-900 uppercase tracking-widest">Código de Login</h4>
+          <div className="space-y-2">
+            <input
+              className="w-full h-10 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-blue-500"
+              value={systemTemplates.login_code.subject}
+              onChange={e => setSystemTemplates({ ...systemTemplates, login_code: { ...systemTemplates.login_code, subject: e.target.value } })}
+              placeholder="Assunto"
+            />
+            <textarea
+              rows={4}
+              className="w-full p-3 bg-white border border-slate-200 rounded-xl text-[11px] font-medium outline-none focus:border-blue-500 resize-none"
+              value={systemTemplates.login_code.content}
+              onChange={e => setSystemTemplates({ ...systemTemplates, login_code: { ...systemTemplates.login_code, content: e.target.value } })}
+            />
+            <p className="text-[9px] text-slate-400 italic">Variável disponível: <code className="font-bold text-amber-600">{"{{code}}"}</code></p>
+          </div>
+        </div>
+      </div>
+
+      <div className="pt-6">
+        <Button size="md" variant="primary" icon={Save} onClick={save}>
+          {saved ? 'Tudo Salvo! ✓' : 'Salvar Todas as Configurações'}
+        </Button>
+      </div>
     </div>
   );
 };
