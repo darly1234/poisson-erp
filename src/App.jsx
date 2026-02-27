@@ -48,6 +48,26 @@ function AppInner() {
   });
   const resetToken = new URLSearchParams(window.location.search).get('token');
 
+  // Injeção dinâmica do reCAPTCHA v3
+  useEffect(() => {
+    const siteKey = process.env.REACT_APP_RECAPTCHA_SITE_KEY;
+    if (!siteKey) return;
+
+    // Verifica se já existe o script para evitar duplicatas
+    const scriptId = 'google-recaptcha-v3';
+    if (document.getElementById(scriptId)) return;
+
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src = `https://www.google.com/recaptcha/api.js?render=${siteKey}`;
+    script.async = true;
+    document.head.appendChild(script);
+
+    return () => {
+      // Opcional: remover o badge ao deslogar? Geralmente v3 deixa o badge.
+    };
+  }, []);
+
   if (loading) return (
     <div className="min-h-screen bg-gradient-to-br from-[#0D1340] to-[#1a2060] flex items-center justify-center">
       <div className="w-10 h-10 border-4 border-white/10 border-t-white rounded-full animate-spin" />
