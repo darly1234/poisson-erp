@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Send, History, CheckCircle2, XCircle, Clock, Eye, Info } from 'lucide-react';
+import { Send, History, CheckCircle2, XCircle, Clock, Eye, Info } from 'lucide-react';
 import Button from './ui/Button';
 import { api } from '../services/api';
 
