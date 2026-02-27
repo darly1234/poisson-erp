@@ -9,6 +9,9 @@ const syncList = [
     { local: 'c:/poisson-backend/src/routes/files.js', remote: '/var/www/poisson-backend/src/routes/files.js' },
     { local: 'c:/poisson-backend/src/routes/auth.js', remote: '/var/www/poisson-backend/src/routes/auth.js' },
     { local: 'c:/poisson-backend/src/routes/webhooks.js', remote: '/var/www/poisson-backend/src/routes/webhooks.js' },
+    { local: 'c:/poisson-backend/server.js', remote: '/var/www/poisson-backend/server.js' },
+    { local: 'c:/poisson-backend/src/routes/uploads.js', remote: '/var/www/poisson-backend/src/routes/uploads.js' },
+    { local: 'c:/poisson-backend/src/routes/backup.js', remote: '/var/www/poisson-backend/src/routes/backup.js' },
     { local: 'c:/poisson-backend/.env', remote: '/var/www/poisson-backend/.env' },
 
     // Frontend (exige rebuild)
@@ -24,7 +27,12 @@ const syncList = [
     { local: 'c:/poisson-erp/src/components/list/RecordsTable.jsx', remote: '/var/www/poisson-erp/src/components/list/RecordsTable.jsx' },
     { local: 'c:/poisson-erp/src/components/MessagingTab.jsx', remote: '/var/www/poisson-erp/src/components/MessagingTab.jsx' },
     { local: 'c:/poisson-erp/src/components/BookPipeline.jsx', remote: '/var/www/poisson-erp/src/components/BookPipeline.jsx' },
-    { local: 'c:/poisson-erp/src/components/crossref/CrossrefTab.jsx', remote: '/var/www/poisson-erp/src/components/crossref/CrossrefTab.jsx' }
+    { local: 'c:/poisson-erp/src/components/crossref/CrossrefTab.jsx', remote: '/var/www/poisson-erp/src/components/crossref/CrossrefTab.jsx' },
+    { local: 'c:/poisson-erp/src/components/fichy/FichyContainer.jsx', remote: '/var/www/poisson-erp/src/components/fichy/FichyContainer.jsx' },
+    { local: 'c:/poisson-erp/src/components/files/FileManagerTab.jsx', remote: '/var/www/poisson-erp/src/components/files/FileManagerTab.jsx' },
+    { local: 'c:/poisson-erp/src/components/modals/DeleteConfirmModal.jsx', remote: '/var/www/poisson-erp/src/components/modals/DeleteConfirmModal.jsx' },
+    { local: 'c:/poisson-erp/src/components/list/ColumnManager.jsx', remote: '/var/www/poisson-erp/src/components/list/ColumnManager.jsx' },
+    { local: 'c:/poisson-erp/auth-system/backend/controllers/authController.js', remote: '/var/www/poisson-erp/auth-system/backend/controllers/authController.js' }
 ];
 
 conn.on('ready', () => {

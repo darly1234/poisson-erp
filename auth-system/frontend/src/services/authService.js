@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/auth';
+const API_URL = process.env.NODE_ENV === 'production' ? '/api/auth' : 'http://localhost:3001/api/auth';
 
 const login = async (email, password) => {
     const response = await axios.post(`${API_URL}/login`, {

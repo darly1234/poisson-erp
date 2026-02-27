@@ -10,6 +10,7 @@ import ListView from './views/ListView';
 import DashboardView from './views/DashboardView';
 import DetailView from './views/DetailView';
 import ConfigView from './views/ConfigView';
+import DeleteConfirmModal from './components/modals/DeleteConfirmModal';
 import { api } from './services/api';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPage from './views/auth/LoginPage';
@@ -127,9 +128,22 @@ function AppMain() {
   const [editingFilter, setEditingFilter] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const [visibleColumns, setVisibleColumns] = useState(['id', 'f6', 'f1', 'f3', 'f10']);
+  const [visibleColumns, setVisibleColumns] = useState(() => {
+    try {
+      const saved = localStorage.getItem('poisson_visible_columns');
+      return (saved && saved !== 'undefined') ? JSON.parse(saved) : ['id', 'f6', 'f1', 'f3', 'f10'];
+    } catch (e) {
+      console.error('Error parsing visible columns:', e);
+      return ['id', 'f6', 'f1', 'f3', 'f10'];
+    }
+  });
   const [showColumnManager, setShowColumnManager] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'asc' });
+
+  // Persist visible columns
+  useEffect(() => {
+    localStorage.setItem('poisson_visible_columns', JSON.stringify(visibleColumns));
+  }, [visibleColumns]);
 
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
@@ -421,17 +435,45 @@ function AppMain() {
     }));
   };
 
-  const executeDelete = () => {
-    if (confirmModal.type === 'tab') {
-      setMetadata({ ...metadata, tabs: metadata.tabs.filter(t => t.id !== confirmModal.id) });
-      if (editingTabId === confirmModal.id) setEditingTabId(null);
-    } else if (confirmModal.type === 'field') {
-      setMetadata({
-        ...metadata,
-        tabs: metadata.tabs.map(t =>
-          t.id === confirmModal.parentId ? { ...t, fields: t.fields.filter(f => f.id !== confirmModal.id) } : t
-        )
-      });
+  const executeDelete = async () => {
+    try {
+      if (confirmModal.type === 'tab') {
+        setMetadata({ ...metadata, tabs: metadata.tabs.filter(t => t.id !== confirmModal.id) });
+        if (editingTabId === confirmModal.id) setEditingTabId(null);
+      } else if (confirmModal.type === 'field') {
+        setMetadata({
+          ...metadata,
+          tabs: metadata.tabs.map(t =>
+            t.id === confirmModal.parentId ? { ...t, fields: t.fields.filter(f => f.id !== confirmModal.id) } : t
+          )
+        });
+      } else if (confirmModal.type === 'record') {
+        await api.deleteRecord(confirmModal.id);
+        setRecords(records.filter(r => r.id !== confirmModal.id));
+        setView('list');
+      } else if (confirmModal.type === 'file') {
+        const { fieldId, fileName } = confirmModal.extraData || {};
+        const currentFiles = Array.isArray(selectedRecord.data[fieldId]) ? selectedRecord.data[fieldId] : [];
+        const filteredFiles = currentFiles.filter(f => {
+          if (typeof f === 'string') return f !== fileName;
+          return f.name !== fileName;
+        });
+        const updated = { ...selectedRecord, data: { ...selectedRecord.data, [fieldId]: filteredFiles } };
+        setSelectedRecord(updated);
+        setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
+        if (!selectedRecord.isNew) await api.updateRecord(selectedRecord.id, updated.data);
+      } else if (confirmModal.type === 'filter') {
+        setSavedFilters(savedFilters.filter(f => f.id !== confirmModal.id));
+        if (editingFilter?.id === confirmModal.id) setEditingFilter(null);
+      } else if (confirmModal.type === 'filter_block') {
+        setEditingFilter({ ...editingFilter, blocks: editingFilter.blocks.filter(b => b.id !== confirmModal.id) });
+      } else if (confirmModal.type === 'template') {
+        const removeTemplate = confirmModal.extraData?.removeTemplate;
+        if (removeTemplate) removeTemplate(confirmModal.id);
+      }
+    } catch (err) {
+      console.error('Delete failed:', err);
+      alert('Falha ao excluir o item. Tente novamente.');
     }
     setConfirmModal({ show: false, type: null, id: null, parentId: null, label: '' });
   };
@@ -668,6 +710,7 @@ function AppMain() {
                 dragActiveFieldId={dragActiveFieldId}
                 handleDrag={handleDrag} handleDrop={handleDrop}
                 handleFileSelection={handleFileSelection} removeFile={removeFile}
+                setConfirmModal={setConfirmModal}
               />
             )}
 
@@ -685,11 +728,32 @@ function AppMain() {
               />
             )}
 
+            {view === 'filter' && (
+              <FilterView
+                savedFilters={savedFilters} setSavedFilters={setSavedFilters}
+                editingFilter={editingFilter} setEditingFilter={setEditingFilter}
+                allFields={allFields}
+                setActiveFilterId={setActiveFilterId}
+                getOperatorsByField={getOperatorsByField}
+                updateRuleInBlock={updateRuleInBlock}
+                saveFilter={saveFilter}
+                setConfirmModal={setConfirmModal}
+              />
+            )}
+
           </div>
         </section>
 
         <AppFooter />
       </main>
+
+      {confirmModal.show && (
+        <DeleteConfirmModal
+          confirmModal={confirmModal}
+          setConfirmModal={setConfirmModal}
+          executeDelete={executeDelete}
+        />
+      )}
     </div>
   );
 }

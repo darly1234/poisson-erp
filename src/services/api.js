@@ -28,7 +28,12 @@ const fetchWithAuth = async (endpoint, options = {}) => {
     }
     throw new Error(errorMsg);
   }
-  return res.json();
+  const text = await res.text();
+  try {
+    return text ? JSON.parse(text) : null;
+  } catch (e) {
+    return text;
+  }
 };
 
 export const api = {

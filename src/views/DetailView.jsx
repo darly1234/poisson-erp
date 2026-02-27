@@ -21,180 +21,159 @@ const ICON_MAP = { Info, BookOpen, Wallet, Database: Folder, User: Info };
 const FieldRenderer = ({
   f, selectedRecord, setSelectedRecord, records, setRecords, dragActiveFieldId,
   handleDrag, handleDrop, handleFileSelection, removeFile
-}) => (
-  <div className="space-y-2">
-    <label className="text-[11px] font-black text-[#1F2A8A] uppercase tracking-widest px-1 block">{f.label}</label>
-    {f.type === 'select' ? (
-      <select
-        className="w-full h-11 px-3 bg-white border border-slate-300 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[#1E88E5] transition-all shadow-sm"
-        value={selectedRecord.data[f.id] || ""}
-        onChange={e => {
-          const updated = { ...selectedRecord, data: { ...selectedRecord.data, [f.id]: e.target.value } };
-          setSelectedRecord(updated);
-          setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
-          api.updateRecord(selectedRecord.id, updated.data);
-        }}
-      >
-        <option value="">Selecione...</option>
-        {f.options && (Array.isArray(f.options) ? f.options : String(f.options).split(',').map(s => s.trim()).filter(Boolean)).map(o => (
-          <option key={o} value={o}>{o}</option>
-        ))}
-      </select>
-    ) : f.type === 'authors' ? (
-      <AuthorsField
-        value={selectedRecord.data[f.id]}
-        onChange={next => {
-          const updated = { ...selectedRecord, data: { ...selectedRecord.data, [f.id]: next } };
-          setSelectedRecord(updated);
-          setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
-          api.updateRecord(selectedRecord.id, updated.data);
-        }}
-      />
-    ) : f.type === 'negotiator' ? (
-      <NegotiatorField
-        value={selectedRecord.data[f.id]}
-        onChange={next => {
-          const updated = { ...selectedRecord, data: { ...selectedRecord.data, [f.id]: next } };
-          setSelectedRecord(updated);
-          setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
-          api.updateRecord(selectedRecord.id, updated.data);
-        }}
-      />
-    ) : f.type === 'payment_status' ? (
-      <PaymentStatusField
-        value={selectedRecord.data[f.id]}
-        onChange={next => {
-          const updated = { ...selectedRecord, data: { ...selectedRecord.data, [f.id]: next } };
-          setSelectedRecord(updated);
-          setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
-          api.updateRecord(selectedRecord.id, updated.data);
-        }}
-      />
-    ) : f.type === 'workflow' ? (
-      <WorkflowField
-        recordId={selectedRecord.id}
-        isNew={selectedRecord.isNew}
-        value={selectedRecord.data[f.id]}
-        onChange={next => {
-          const updated = { ...selectedRecord, data: { ...selectedRecord.data, [f.id]: next } };
-          setSelectedRecord(updated);
-          setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
-          if (!selectedRecord.isNew) api.updateRecord(selectedRecord.id, updated.data);
-        }}
-      />
-    ) : f.type === 'cover' ? (
-      <CoverField
-        value={selectedRecord.data[f.id]}
-        onChange={next => {
-          const updated = { ...selectedRecord, data: { ...selectedRecord.data, [f.id]: next } };
-          setSelectedRecord(updated);
-          setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
-          api.updateRecord(selectedRecord.id, updated.data);
-        }}
-      />
-    ) : f.type === 'file' ? (
-      <div className="space-y-4">
-        <div
-          className={`relative group transition-all duration-300 ${dragActiveFieldId === f.id ? 'scale-[1.01]' : ''}`}
-          onDragEnter={e => handleDrag(e, f.id)}
-          onDragLeave={e => handleDrag(e, f.id)}
-          onDragOver={e => handleDrag(e, f.id)}
-          onDrop={e => handleDrop(e, f.id)}
-        >
-          <input type="file" id={`file-${f.id}`} className="hidden" multiple onChange={e => handleFileSelection(e, f.id)} />
-          <label
-            htmlFor={`file-${f.id}`}
-            className={`w-full min-h-[120px] px-6 py-6 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all border-2 border-dashed ${dragActiveFieldId === f.id ? 'bg-[#FFF3E0] border-[#FF9800] shadow-sm' : 'bg-transparent border-slate-200 hover:border-[#FF9800] hover:bg-[#FFF8F0]'}`}
-          >
-            <div className="text-[#FF9800] mb-2">
-              <FileUp size={32} strokeWidth={2} />
-            </div>
-            <span className="text-[11px] font-black uppercase text-slate-800 tracking-wider">Anexar Arquivo (Tamanho Ilimitado)</span>
-            <span className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">(Suporta qualquer formato)</span>
-          </label>
-        </div>
-        {Array.isArray(selectedRecord.data[f.id]) && selectedRecord.data[f.id].length > 0 && (
-          <div className="space-y-2">
-            {selectedRecord.data[f.id].map((fileObj, idx) => {
-              const isMock = typeof fileObj === 'string';
-              const fileName = isMock ? fileObj : fileObj.name;
-              const fileData = isMock ? null : fileObj.data;
+}) => {
+  const handleChange = (newValue) => {
+    const updated = { ...selectedRecord, data: { ...selectedRecord.data, [f.id]: newValue } };
+    setSelectedRecord(updated);
+    setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
+    if (!selectedRecord.isNew) {
+      api.updateRecord(selectedRecord.id, updated.data);
+    }
+  };
 
-              return (
-                <div key={idx} className="flex items-center justify-between p-2 bg-white border border-slate-100 rounded-xl group/genfile">
-                  <div className="flex items-center gap-2 overflow-hidden">
-                    <File size={14} className="text-slate-400 shrink-0" />
-                    <span className="text-[11px] font-bold truncate max-w-[200px]" title={fileName}>{fileName}</span>
-                  </div>
-                  <div className="flex items-center gap-1 transition-opacity">
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (fileObj.url) {
-                          window.open(fileObj.url, '_blank');
-                        } else if (fileData) {
-                          const link = document.createElement('a');
-                          link.href = fileData;
-                          link.download = fileName;
-                          link.click();
-                        } else {
-                          alert('Este arquivo não possui link válido para download.');
-                        }
-                      }}
-                      className="p-1.5 text-orange-500 bg-orange-50 hover:bg-orange-100 hover:text-orange-600 rounded transition-colors"
-                      title="Visualizar/Download"
-                    >
-                      <Download size={14} />
-                    </button>
-                    <button
-                      onClick={() => removeFile(f.id, isMock ? fileName : fileObj)}
-                      className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded opacity-100 md:opacity-0 group-hover/genfile:opacity-100 transition-opacity"
-                      title="Remover"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+  return (
+    <div className="space-y-2">
+      <label className="text-[11px] font-black text-[#1F2A8A] uppercase tracking-widest px-1 block">{f.label}</label>
+      {f.type === 'select' ? (
+        <select
+          className="w-full h-11 px-3 bg-white border border-slate-300 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[#1E88E5] transition-all shadow-sm"
+          value={selectedRecord.data[f.id] || ""}
+          onChange={e => handleChange(e.target.value)}
+        >
+          <option value="">Selecione...</option>
+          {f.options && (Array.isArray(f.options) ? f.options : String(f.options).split(',').map(s => s.trim()).filter(Boolean)).map(o => (
+            <option key={o} value={o}>{o}</option>
+          ))}
+        </select>
+      ) : f.type === 'authors' ? (
+        <AuthorsField
+          value={selectedRecord.data[f.id]}
+          onChange={handleChange}
+        />
+      ) : f.type === 'negotiator' ? (
+        <NegotiatorField
+          value={selectedRecord.data[f.id]}
+          onChange={handleChange}
+        />
+      ) : f.type === 'payment_status' ? (
+        <PaymentStatusField
+          value={selectedRecord.data[f.id]}
+          onChange={handleChange}
+        />
+      ) : f.type === 'workflow' ? (
+        <WorkflowField
+          recordId={selectedRecord.id}
+          isNew={selectedRecord.isNew}
+          value={selectedRecord.data[f.id]}
+          onChange={handleChange}
+        />
+      ) : f.type === 'cover' ? (
+        <CoverField
+          value={selectedRecord.data[f.id]}
+          onChange={handleChange}
+        />
+      ) : f.type === 'file' ? (
+        <div className="space-y-4">
+          <div
+            className={`relative group transition-all duration-300 ${dragActiveFieldId === f.id ? 'scale-[1.01]' : ''}`}
+            onDragEnter={e => handleDrag(e, f.id)}
+            onDragLeave={e => handleDrag(e, f.id)}
+            onDragOver={e => handleDrag(e, f.id)}
+            onDrop={e => handleDrop(e, f.id)}
+          >
+            <input type="file" id={`file-${f.id}`} className="hidden" multiple onChange={e => handleFileSelection(e, f.id)} />
+            <label
+              htmlFor={`file-${f.id}`}
+              className={`w-full min-h-[120px] px-6 py-6 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all border-2 border-dashed ${dragActiveFieldId === f.id ? 'bg-[#FFF3E0] border-[#FF9800] shadow-sm' : 'bg-transparent border-slate-200 hover:border-[#FF9800] hover:bg-[#FFF8F0]'}`}
+            >
+              <div className="text-[#FF9800] mb-2">
+                <FileUp size={32} strokeWidth={2} />
+              </div>
+              <span className="text-[11px] font-black uppercase text-slate-800 tracking-wider">Anexar Arquivo (Tamanho Ilimitado)</span>
+              <span className="text-[9px] font-bold uppercase text-slate-400 tracking-wider">(Suporta qualquer formato)</span>
+            </label>
           </div>
-        )}
-      </div>
-    ) : f.type === 'long_text' ? (
-      <textarea
-        className="w-full min-h-[120px] p-4 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-[#1E88E5] transition-all shadow-sm resize-y"
-        value={selectedRecord.data[f.id] || ""}
-        onChange={e => {
-          const updated = { ...selectedRecord, data: { ...selectedRecord.data, [f.id]: e.target.value } };
-          setSelectedRecord(updated);
-          setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
-          api.updateRecord(selectedRecord.id, updated.data);
-        }}
-        onKeyDown={e => e.stopPropagation()}
-      />
-    ) : (
-      <input
-        type={f.type === 'date' ? 'date' : 'text'}
-        className="w-full h-11 px-4 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-[#1E88E5] transition-all shadow-sm"
-        value={selectedRecord.data[f.id] || ""}
-        onChange={e => {
-          const masked = applyMask(e.target.value, f.type);
-          const updated = { ...selectedRecord, data: { ...selectedRecord.data, [f.id]: masked } };
-          setSelectedRecord(updated);
-          setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
-          api.updateRecord(selectedRecord.id, updated.data);
-        }}
-        onKeyDown={e => e.stopPropagation()}
-      />
-    )}
-  </div>
-);
+          {Array.isArray(selectedRecord.data[f.id]) && selectedRecord.data[f.id].length > 0 && (
+            <div className="space-y-2">
+              {selectedRecord.data[f.id].map((fileObj, idx) => {
+                const isMock = typeof fileObj === 'string';
+                const fileName = isMock ? fileObj : fileObj.name;
+                const fileData = isMock ? null : fileObj.data;
+
+                return (
+                  <div key={idx} className="flex items-center justify-between p-2 bg-white border border-slate-100 rounded-xl group/genfile">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <File size={14} className="text-slate-400 shrink-0" />
+                      <span className="text-[11px] font-bold truncate max-w-[200px]" title={fileName}>{fileName}</span>
+                    </div>
+                    <div className="flex items-center gap-1 transition-opacity">
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (fileObj.url) {
+                            window.open(fileObj.url, '_blank');
+                          } else if (fileData) {
+                            const link = document.createElement('a');
+                            link.href = fileData;
+                            link.download = fileName;
+                            link.click();
+                          } else {
+                            alert('Este arquivo não possui link válido para download.');
+                          }
+                        }}
+                        className="p-1.5 text-orange-500 bg-orange-50 hover:bg-orange-100 hover:text-orange-600 rounded transition-colors"
+                        title="Visualizar/Download"
+                      >
+                        <Download size={14} />
+                      </button>
+                      <button
+                        onClick={() => setConfirmModal({
+                          show: true,
+                          type: 'file',
+                          id: isMock ? fileName : fileObj,
+                          label: fileName,
+                          extraData: { fieldId: f.id, fileName }
+                        })}
+                        className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded opacity-100 md:opacity-0 group-hover/genfile:opacity-100 transition-opacity"
+                        title="Remover"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : f.type === 'long_text' ? (
+        <textarea
+          className="w-full min-h-[120px] p-4 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-[#1E88E5] transition-all shadow-sm resize-y"
+          value={selectedRecord.data[f.id] || ""}
+          onChange={e => handleChange(e.target.value)}
+          onKeyDown={e => e.stopPropagation()}
+        />
+      ) : (
+        <input
+          type={f.type === 'date' ? 'date' : 'text'}
+          className="w-full h-11 px-4 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-[#1E88E5] transition-all shadow-sm"
+          value={selectedRecord.data[f.id] || ""}
+          onChange={e => {
+            const masked = applyMask(e.target.value, f.type);
+            handleChange(masked);
+          }}
+          onKeyDown={e => e.stopPropagation()}
+        />
+      )}
+    </div>
+  );
+};
 
 const DetailView = ({
-  selectedRecord, setSelectedRecord, records, setRecords,
   metadata, activeDetailTab, setActiveDetailTab, setView,
   currentDetailTabLayout,
-  dragActiveFieldId, handleDrag, handleDrop, handleFileSelection, removeFile
+  dragActiveFieldId, handleDrag, handleDrop, handleFileSelection, removeFile,
+  setConfirmModal
 }) => {
   const tabs = [
     ...(metadata?.tabs || []),
@@ -309,7 +288,12 @@ const DetailView = ({
           </h1>
           <p className="text-slate-400 font-medium mt-1 uppercase tracking-[0.15em] text-[9px] md:text-[10px]">Gestão Individual Poisson</p>
         </div>
-        <Button variant="danger" size="xs" icon={Trash2} onClick={() => api.deleteRecord(selectedRecord.id).then(() => { setRecords(records.filter(r => r.id !== selectedRecord.id)); setView('list'); })}>
+        <Button variant="danger" size="xs" icon={Trash2} onClick={() => setConfirmModal({
+          show: true,
+          type: 'record',
+          id: selectedRecord.id,
+          label: `Registro ${selectedRecord.id}`
+        })}>
           Eliminar
         </Button>
       </div>
@@ -438,11 +422,19 @@ const DetailView = ({
           )}
         </div>
 
-        <div className="p-4 md:p-6 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-b-xl">
-          <div className={`transition-all duration-500 flex items-center gap-2 text-green-600 text-xs font-black ${saveToast ? 'opacity-100' : 'opacity-0'}`}>
-            <CheckCircle2 size={16} />
-            Salvo com sucesso!
+        {saveToast && (
+          <div className="fixed inset-0 flex items-center justify-center z-[100] pointer-events-none">
+            <div className="bg-[#1E88E5] text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-in zoom-in-95 duration-300 border-4 border-white/20 backdrop-blur-sm">
+              <CheckCircle2 size={32} className="animate-bounce" />
+              <div className="flex flex-col">
+                <span className="text-lg font-black uppercase tracking-tighter leading-none">Salvo com Sucesso</span>
+                <span className="text-[10px] font-bold opacity-80 uppercase tracking-widest mt-1">Os dados foram atualizados no servidor</span>
+              </div>
+            </div>
           </div>
+        )}
+
+        <div className="p-4 md:p-6 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-end gap-4 rounded-b-xl">
           <div className="flex gap-3 w-full sm:w-auto">
             <Button variant="ghost" size="sm" onClick={() => setView('list')} className="flex-1 sm:flex-none">Fechar</Button>
             <Button variant="primary" size="md" icon={CheckCircle2} onClick={handleConfirm} className="flex-1 sm:flex-none">Salvar Dados</Button>

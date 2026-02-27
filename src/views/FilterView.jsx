@@ -10,7 +10,8 @@ const FilterView = ({
   setActiveFilterId,
   getOperatorsByField,
   updateRuleInBlock,
-  saveFilter
+  saveFilter,
+  setConfirmModal
 }) => (
   <div className="w-full space-y-6 animate-slide">
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm">
@@ -41,7 +42,20 @@ const FilterView = ({
               <span className="text-xs md:text-[13px] font-bold text-slate-800">{f.name}</span>
               <div className="flex gap-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all">
                 <button onClick={(e) => { e.stopPropagation(); setSavedFilters([...savedFilters, { ...f, id: `f-${Date.now()}`, name: `${f.name} (Cópia)` }]); }} className="text-slate-400 hover:text-blue-500"><Copy size={13} /></button>
-                <button onClick={(e) => { e.stopPropagation(); setSavedFilters(savedFilters.filter(fi => fi.id !== f.id)); }} className="text-slate-400 hover:text-red-500"><Trash2 size={13} /></button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setConfirmModal({
+                      show: true,
+                      type: 'filter',
+                      id: f.id,
+                      label: f.name
+                    });
+                  }}
+                  className="text-slate-400 hover:text-red-500"
+                >
+                  <Trash2 size={13} />
+                </button>
               </div>
             </div>
             <span className={`text-[8px] md:text-[9px] font-black px-2 py-0.5 rounded-full uppercase ${f.globalLogic === 'AND' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'}`}>
@@ -91,7 +105,17 @@ const FilterView = ({
                         <button onClick={() => setEditingFilter({ ...editingFilter, blocks: editingFilter.blocks.map(b => b.id === block.id ? { ...b, logic: 'OR' } : b) })} className={`px-2 py-0.5 text-[8px] md:text-[9px] font-black rounded ${block.logic === 'OR' ? 'bg-white text-amber-700 shadow-sm' : 'text-slate-500'}`}>OU</button>
                       </div>
                     </div>
-                    <button onClick={() => setEditingFilter({ ...editingFilter, blocks: editingFilter.blocks.filter(b => b.id !== block.id) })} className="text-slate-300 hover:text-red-500"><Trash2 size={14} /></button>
+                    <button
+                      onClick={() => setConfirmModal({
+                        show: true,
+                        type: 'filter_block',
+                        id: block.id,
+                        label: `Bloco ${bIdx + 1}`
+                      })}
+                      className="text-slate-300 hover:text-red-500"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                   <div className="space-y-2 md:space-y-3">
                     {block.rules.map((rule, rIdx) => {

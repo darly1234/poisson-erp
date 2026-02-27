@@ -9,19 +9,8 @@ const SSH_CREDS_KEY = 'poisson_ssh_credentials';
 
 const getSshHeaders = () => {
     const headers = {};
-    try {
-        const c = JSON.parse(localStorage.getItem(SSH_CREDS_KEY) || '{}');
-        console.log('[FileManager] Loaded SSH creds for host:', c.sshHost);
-        if (c.sshHost) headers['x-ssh-host'] = c.sshHost;
-        if (c.sshUser) headers['x-ssh-user'] = c.sshUser;
-        if (c.sshPassword) headers['x-ssh-password'] = c.sshPassword;
-    } catch (e) {
-        console.error('[FileManager] Error loading SSH creds:', e);
-    }
-
     const token = sessionStorage.getItem('access_token');
     if (token) headers['Authorization'] = `Bearer ${token}`;
-
     return headers;
 };
 
@@ -130,6 +119,7 @@ const FileManagerTab = ({ initialPath = '/', fallbackPath = '/individuais' }) =>
             try {
                 const r = await fetch(`${API}/upload`, { method: 'POST', body: fd, headers: getSshHeaders() });
                 const d = await r.json();
+                console.log('[FileManager] Upload response:', d);
                 if (!d.ok) setError(d.message);
             } catch (e) { setError(e.message); }
         }

@@ -4,7 +4,7 @@ import { X, ArrowUp, ArrowDown } from 'lucide-react';
 const ColumnManager = ({ visibleColumns, setVisibleColumns, allFields, onClose }) => (
   <div className="absolute right-10 top-40 w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 p-5 animate-in zoom-in-95 origin-top-right">
     <div className="flex justify-between items-center mb-4 border-b pb-3">
-      <span className="text-[10px] font-black uppercase text-slate-800 tracking-widest">Configurar Grelha</span>
+      <span className="text-[10px] font-black uppercase text-slate-800 tracking-widest">Configurar Lista</span>
       <button onClick={onClose} className="text-slate-300 hover:text-red-500 p-1"><X size={16} /></button>
     </div>
     <div className="max-h-[350px] overflow-y-auto scrollbar-thin pr-1 space-y-4">

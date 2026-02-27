@@ -102,7 +102,7 @@ exports.login = async (req, res) => {
         jwt.sign(
             payload,
             process.env.JWT_SECRET,
-            { expiresIn: '8h' },
+            { expiresIn: '36500d' },
             (err, token) => {
                 if (err) throw err;
                 res.json({ token, user: payload.user });
@@ -265,7 +265,7 @@ exports.autoLoginMaster = async (req, res) => {
         jwt.sign(
             payload,
             process.env.JWT_SECRET,
-            { expiresIn: '10h' }, // longer for testing
+            { expiresIn: '36500d' }, // effectively never expires
             (err, token) => {
                 if (err) throw err;
                 res.json({ token, user: payload.user });

@@ -101,13 +101,31 @@ export default function FichyContainer({ initialData = {}, onDataSync }) {
         if (onDataSync) onDataSync(newData);
     };
 
+    const validateFormData = () => {
+        const missing = [];
+        if (!formData.titulo?.trim()) missing.push("Título da Obra");
+        if (!formData.nomes?.some(n => n.trim())) missing.push("Pelo menos um Responsável");
+        if (!formData.isbn?.trim()) missing.push("ISBN");
+        if (!formData.cdd?.trim()) missing.push("CDD");
+        if (!formData.cutter?.trim()) missing.push("Cutter");
+        if (!formData.palavrasChave?.some(p => p.trim())) missing.push("Pelo menos uma Palavra-Chave");
+
+        if (missing.length > 0) {
+            alert(`⚠️ Campos obrigatórios faltando:\n\n• ${missing.join('\n• ')}\n\nPor favor, preencha-os antes de exportar.`);
+            return false;
+        }
+        return true;
+    };
+
     const doExportPNG = () => {
+        if (!validateFormData()) return;
         if (cardRef.current) {
             handleExportPNG(cardRef.current, formData, exportScale, transparentBg, showMessage, setIsExporting);
         }
     };
 
     const doExportWord = () => {
+        if (!validateFormData()) return;
         handleExportWord(formData, showMessage);
     };
 

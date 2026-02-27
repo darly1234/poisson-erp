@@ -45,8 +45,17 @@ const RecordsTable = ({
                   {c === 'id'
                     ? <span className="font-mono text-blue-700 bg-blue-100/50 px-2 py-1 rounded-md text-[10px] font-black border border-blue-200/50">{r.id}</span>
                     : (() => {
-                      const val = r.data[c];
                       const field = allFields.find(f => f.id === c);
+                      let val = r.data[c];
+
+                      // Se o valor estiver vazio, tenta aliases comuns baseados no label do campo
+                      if (val === undefined || val === null || val === '') {
+                        const labelNorm = field?.label?.toLowerCase() || '';
+                        if (labelNorm.includes('título')) val = r.data.titulo || r.data.f_title || r.data.title;
+                        else if (labelNorm.includes('autor')) val = r.data.nomes || r.data.author || r.data.f1;
+                        else if (labelNorm.includes('isbn')) val = r.data.isbn || r.data.f7;
+                        else if (labelNorm.includes('doi')) val = r.data.doi || r.data.f18;
+                      }
                       if (field?.type === 'authors' && val) {
                         const pessoas = Array.isArray(val?.pessoas) ? val.pessoas : (Array.isArray(val) ? val : []);
                         const papel = val?.papel || pessoas[0]?.role || 'Autor';

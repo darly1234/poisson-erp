@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Database, User, Layout, Trash2, Eye, EyeOff, Cloud, Save, Globe, Server, Mail } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
-import DeleteConfirmModal from '../components/modals/DeleteConfirmModal';
 import BackupPanel from './BackupPanel';
 import FormLayoutBuilder from '../components/layout/FormLayoutBuilder';
 import { normalizeMetadata } from '../utils/metadataMigration';
@@ -37,7 +36,15 @@ const TemplateItem = ({ temp, index, updateTemplate, removeTemplate }) => {
   return (
     <div className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 relative group shadow-sm hover:shadow-md transition-all">
       <button
-        onClick={() => { if (window.confirm('Excluir este modelo?')) removeTemplate(index) }}
+        onClick={() => {
+          setConfirmModal({
+            show: true,
+            type: 'template',
+            id: index,
+            label: temp.name,
+            extraData: { removeTemplate }
+          })
+        }}
         className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-all"
         title="Excluir modelo"
       >
@@ -78,7 +85,7 @@ const TemplateItem = ({ temp, index, updateTemplate, removeTemplate }) => {
   );
 };
 
-const TemplateSection = ({ handleInputInteraction }) => {
+const TemplateSection = ({ handleInputInteraction, setConfirmModal }) => {
   const [webhookUrl, setWebhookUrl] = useState('');
   const [templates, setTemplates] = useState([]);
   const [smtpConfig, setSmtpConfig] = useState({
@@ -184,6 +191,7 @@ const TemplateSection = ({ handleInputInteraction }) => {
               index={i}
               updateTemplate={updateTemplate}
               removeTemplate={removeTemplate}
+              setConfirmModal={setConfirmModal}
             />
           ))}
           {templates.length === 0 && (
@@ -482,9 +490,6 @@ const ConfigView = ({
     </div>
 
     <Card className="flex flex-col md:flex-row min-h-[600px] border-none shadow-2xl relative overflow-hidden">
-      {confirmModal.show && (
-        <DeleteConfirmModal confirmModal={confirmModal} setConfirmModal={setConfirmModal} executeDelete={executeDelete} />
-      )}
 
       <div className="w-full md:w-64 bg-slate-50/50 border-b md:border-b-0 md:border-r border-slate-100 p-4 md:p-6 flex flex-row md:flex-col gap-2 overflow-x-auto no-scrollbar whitespace-nowrap md:whitespace-normal">
         {[
@@ -531,7 +536,7 @@ const ConfigView = ({
         )}
 
         {activeConfigTab === 'messages' && (
-          <TemplateSection handleInputInteraction={handleInputInteraction} />
+          <TemplateSection handleInputInteraction={handleInputInteraction} setConfirmModal={setConfirmModal} />
         )}
 
       </div>
