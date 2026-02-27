@@ -72,7 +72,7 @@ conn.on('ready', () => {
 
         function runCommands() {
             const commands = [
-                'cd /var/www/poisson-erp && npm run build',
+                'cd /var/www/poisson-erp && CI=false npm run build',
                 'pm2 restart poisson-api || pm2 restart all'
             ];
 

@@ -12,7 +12,7 @@ const SSH_CREDS_KEY = 'poisson_ssh_credentials';
 
 // ── Seção Webhook e Templates ───────────────────────────────────────────────
 // ── Sub-componente para cada Template para lidar com Refs próprios ──────────
-const TemplateItem = ({ temp, index, updateTemplate, removeTemplate }) => {
+const TemplateItem = ({ temp, index, updateTemplate, removeTemplate, setConfirmModal }) => {
   const textareaRef = React.useRef(null);
 
   const insertVariable = (field) => {

@@ -170,6 +170,7 @@ const FieldRenderer = ({
 };
 
 const DetailView = ({
+  selectedRecord, setSelectedRecord, records, setRecords,
   metadata, activeDetailTab, setActiveDetailTab, setView,
   currentDetailTabLayout,
   dragActiveFieldId, handleDrag, handleDrop, handleFileSelection, removeFile,

@@ -10,6 +10,7 @@ import ListView from './views/ListView';
 import DashboardView from './views/DashboardView';
 import DetailView from './views/DetailView';
 import ConfigView from './views/ConfigView';
+import FilterView from './views/FilterView';
 import DeleteConfirmModal from './components/modals/DeleteConfirmModal';
 import { api } from './services/api';
 import { AuthProvider, useAuth } from './context/AuthContext';
