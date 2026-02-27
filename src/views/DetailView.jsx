@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, Upload, File, CheckCircle2, Info, BookOpen, Wallet, Folder, Globe, FileUp, Download, Link, ShoppingBag, FolderOpen } from 'lucide-react';
+import { Trash2, Upload, File, CheckCircle2, Info, BookOpen, Wallet, Folder, Globe, FileUp, Download, Link, ShoppingBag, FolderOpen, Mail } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import AuthorsField from '../components/fields/AuthorsField';
@@ -12,6 +12,7 @@ import FichyContainer from '../components/fichy/FichyContainer';
 import CrossrefTab from '../components/crossref/CrossrefTab';
 import WordPressTab from '../components/wordpress/WordPressTab';
 import FileManagerTab from '../components/files/FileManagerTab';
+import MessagingTab from '../components/MessagingTab';
 import { applyMask } from '../utils/masks';
 import { api } from '../services/api';
 
@@ -200,6 +201,7 @@ const DetailView = ({
     { id: 'fichy', label: 'Ficha Catalográfica', icon: BookOpen },
     { id: 'crossref', label: 'Crossy', icon: Link },
     { id: 'wordpress', label: 'WordPress', icon: ShoppingBag },
+    { id: 'messaging', label: 'Comunicação', icon: Mail },
     { id: 'files', label: 'Arquivos', icon: FolderOpen },
   ];
   const fieldBank = metadata?.fieldBank;
@@ -383,6 +385,11 @@ const DetailView = ({
             <FileManagerTab
               initialPath={doiFilesPath}
               fallbackPath="/individuais"
+            />
+          ) : activeDetailTab === 'messaging' ? (
+            <MessagingTab
+              recordId={selectedRecord.id}
+              canonicalData={canonicalData}
             />
           ) : (
             <div className="w-full bg-[#E6E6E6] p-6 lg:p-8 rounded-b-xl md:rounded-2xl shadow-md md:border-t-[8px] border-[#1E88E5]">

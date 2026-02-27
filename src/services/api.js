@@ -49,5 +49,11 @@ export const api = {
     formData.append('id', id);
     formData.append('file', file);
     return fetchWithAuth('/upload', { method: 'POST', body: formData });
-  }
+  },
+
+  // Webhooks & n8n
+  sendMessage: (data) => fetchWithAuth('/webhooks/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+  getMessageHistory: (recordId) => fetchWithAuth(`/webhooks/history/${recordId}`),
+  getSettings: () => fetchWithAuth('/webhooks/settings'),
+  saveSettings: (key, value) => fetchWithAuth('/webhooks/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value }) })
 };

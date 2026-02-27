@@ -1,14 +1,139 @@
 import React, { useState } from 'react';
-import { Database, User, Layout, Trash2, Eye, EyeOff, Cloud, Save, Globe, Server } from 'lucide-react';
+import { Database, User, Layout, Trash2, Eye, EyeOff, Cloud, Save, Globe, Server, Mail } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import DeleteConfirmModal from '../components/modals/DeleteConfirmModal';
 import BackupPanel from './BackupPanel';
 import FormLayoutBuilder from '../components/layout/FormLayoutBuilder';
 import { normalizeMetadata } from '../utils/metadataMigration';
+import { api } from '../services/api';
 
 const WP_CREDS_KEY = 'poisson_wp_credentials';
 const SSH_CREDS_KEY = 'poisson_ssh_credentials';
+
+// ── Seção Webhook e Templates ───────────────────────────────────────────────
+const TemplateSection = ({ handleInputInteraction }) => {
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [templates, setTemplates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saved, setSaved] = useState(false);
+
+  React.useEffect(() => {
+    async function load() {
+      try {
+        const settings = await api.getSettings();
+        setWebhookUrl(settings.n8n_webhook_url?.url || '');
+        setTemplates(settings.message_templates || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const save = async () => {
+    try {
+      await api.saveSettings('n8n_webhook_url', { url: webhookUrl });
+      await api.saveSettings('message_templates', templates);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      alert('Erro ao salvar: ' + err.message);
+    }
+  };
+
+  const addTemplate = () => {
+    setTemplates([...templates, { name: 'Novo Modelo', content: 'Olá, confira os dados: {{title}}' }]);
+  };
+
+  const removeTemplate = (index) => {
+    setTemplates(templates.filter((_, i) => i !== index));
+  };
+
+  const updateTemplate = (index, field, value) => {
+    const newTemplates = [...templates];
+    newTemplates[index] = { ...newTemplates[index], [field]: value };
+    setTemplates(newTemplates);
+  };
+
+  if (loading) return <div className="p-10 text-center text-slate-400">Carregando configurações...</div>;
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-300">
+      <div className="flex items-center gap-2 pb-4 border-b border-slate-100">
+        <Server className="w-5 h-5 text-[#F57C00]" />
+        <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">n8n e Mensagens</h3>
+      </div>
+
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">URL do Webhook (n8n)</label>
+          <input
+            type="url"
+            value={webhookUrl}
+            onChange={e => setWebhookUrl(e.target.value)}
+            placeholder="https://sua-instancia.n8n.cloud/webhook/..."
+            className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-blue-500 transition-all font-mono"
+            onKeyDown={handleInputInteraction}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Modelos de Mensagem</label>
+          <Button size="xs" variant="outline" onClick={addTemplate}>+ Novo Modelo</Button>
+        </div>
+
+        <div className="grid gap-4">
+          {templates.map((temp, i) => (
+            <div key={i} className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 relative group">
+              <button onClick={() => removeTemplate(i)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
+                <Trash2 size={16} />
+              </button>
+              <div className="space-y-1">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Nome do Modelo</label>
+                <input
+                  type="text"
+                  value={temp.name}
+                  onChange={e => updateTemplate(i, 'name', e.target.value)}
+                  className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none focus:border-blue-500 transition-all"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Conteúdo da Mensagem</label>
+                <textarea
+                  rows={4}
+                  value={temp.content}
+                  onChange={e => updateTemplate(i, 'content', e.target.value)}
+                  className="w-full p-3 bg-white border border-slate-200 rounded-lg text-xs font-medium outline-none focus:border-blue-500 transition-all resize-none"
+                />
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {['isbn', 'doi', 'title', 'pub_date', 'doi_link'].map(field => (
+                    <span key={field} className="text-[9px] font-mono bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100 cursor-help" title={`Será substituído pelo ${field} real`}>
+                      {'{{'}{field}{'}}'}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+          {templates.length === 0 && (
+            <div className="text-center py-10 border-2 border-dashed border-slate-100 rounded-2xl text-slate-300 text-xs font-medium">
+              Nenhum modelo cadastrado.
+            </div>
+          )}
+        </div>
+      </div>
+
+      <Button size="md" variant="primary" icon={Save} onClick={save}>
+        {saved ? 'Salvo! ✓' : 'Salvar Configurações'}
+      </Button>
+    </div>
+  );
+};
 
 // ── Seção Meu Perfil ─────────────────────────────────────────────────────────
 const ProfileSection = ({ handleInputInteraction }) => {
@@ -175,6 +300,7 @@ const ConfigView = ({
         {[
           { id: 'profile', label: 'Meu Perfil', icon: User },
           { id: 'metadata', label: 'Metadados', icon: Database },
+          { id: 'messages', label: 'Mensagens', icon: Mail },
           { id: 'system', label: 'Sistema', icon: Layout },
           { id: 'backup', label: 'Backup', icon: Cloud }
         ].map(item => (
@@ -208,6 +334,10 @@ const ConfigView = ({
 
         {activeConfigTab === 'backup' && (
           <BackupPanel />
+        )}
+
+        {activeConfigTab === 'messages' && (
+          <TemplateSection handleInputInteraction={handleInputInteraction} />
         )}
 
       </div>
