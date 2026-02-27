@@ -12,6 +12,9 @@ dotenv.config();
 // (increase limit for base64 image uploads)
 const app = express();
 
+// Trust proxy for rate limiting (behind Nginx)
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(cors());

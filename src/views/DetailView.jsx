@@ -295,21 +295,21 @@ const DetailView = ({
     : '/individuais';
 
   const getTabHasContent = (tab) => {
-    if (tab.id === 'fichy' || tab.id === 'crossref' || tab.id === 'wordpress' || tab.id === 'files') return true;
+    if (tab.id === 'fichy' || tab.id === 'crossref' || tab.id === 'wordpress' || tab.id === 'files' || tab.id === 'messaging') return true;
     if (fieldBank && tab.rows) return tab.rows.some(r => (r || []).length > 0);
     return (tab.fields || []).length > 0;
   };
   return (
     <div className="w-full animate-in zoom-in-95 duration-300">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-4">
-            <span className="text-blue-700 bg-blue-50 px-4 py-1 rounded-2xl border border-blue-200 text-xl font-mono shrink-0">{selectedRecord.id}</span>
-            <span className="truncate">{canonicalData.titulo || 'Obra Sem Título'}</span>
+          <h1 className="text-xl md:text-3xl font-black text-slate-900 uppercase tracking-tighter flex flex-wrap items-center gap-2 md:gap-4 leading-tight">
+            <span className="text-blue-700 bg-blue-50 px-3 md:px-4 py-1 rounded-xl md:rounded-2xl border border-blue-200 text-sm md:xl font-mono shrink-0">{selectedRecord.id}</span>
+            <span className="truncate max-w-[300px] md:max-w-none">{canonicalData.titulo || 'Obra Sem Título'}</span>
           </h1>
-          <p className="text-slate-400 font-medium mt-1 uppercase tracking-[0.15em] text-[10px]">Gestão Individual Poisson</p>
+          <p className="text-slate-400 font-medium mt-1 uppercase tracking-[0.15em] text-[9px] md:text-[10px]">Gestão Individual Poisson</p>
         </div>
-        <Button variant="danger" size="sm" icon={Trash2} onClick={() => api.deleteRecord(selectedRecord.id).then(() => { setRecords(records.filter(r => r.id !== selectedRecord.id)); setView('list'); })}>
+        <Button variant="danger" size="xs" icon={Trash2} onClick={() => api.deleteRecord(selectedRecord.id).then(() => { setRecords(records.filter(r => r.id !== selectedRecord.id)); setView('list'); })}>
           Eliminar
         </Button>
       </div>
@@ -326,7 +326,7 @@ const DetailView = ({
       />
 
       <Card className="border-none shadow-2xl overflow-visible">
-        <div className="flex border-b border-slate-200 bg-slate-50/50 flex-wrap">
+        <div className="flex border-b border-slate-200 bg-slate-50/50 overflow-x-auto no-scrollbar whitespace-nowrap">
           {tabs.filter(t => getTabHasContent(t)).map(tab => {
             const isActive = activeDetailTab === tab.id;
             const Icon = typeof tab.icon === 'function' ? tab.icon : ICON_MAP[tab.icon] || Info;
@@ -334,19 +334,19 @@ const DetailView = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveDetailTab(tab.id)}
-                className={`flex items-center gap-2 py-4 px-5 rounded-t-lg border transition-all -mb-px font-semibold text-[11px] ${isActive
+                className={`flex items-center gap-2 py-3 md:py-4 px-4 md:px-5 rounded-t-lg border transition-all -mb-px font-bold text-[10px] md:text-[11px] ${isActive
                   ? 'bg-white border-slate-200 border-b-white text-slate-800 shadow-sm relative z-10'
                   : 'bg-slate-100/80 border-transparent text-slate-500 hover:bg-slate-100'
                   }`}
               >
-                <Icon size={14} className="opacity-80" />
+                <Icon size={12} className="opacity-80" />
                 {tab.label}
               </button>
             );
           })}
         </div>
 
-        <div className="p-10 min-h-[350px] bg-white border border-slate-200 border-t-0 rounded-b-xl">
+        <div className="p-4 md:p-10 min-h-[350px] bg-white border border-slate-200 border-t-0 rounded-b-xl">
           {activeDetailTab === 'fichy' ? (
             <FichyContainer
               initialData={canonicalData}
@@ -392,18 +392,17 @@ const DetailView = ({
               canonicalData={canonicalData}
             />
           ) : (
-            <div className="w-full bg-[#E6E6E6] p-6 lg:p-8 rounded-b-xl md:rounded-2xl shadow-md md:border-t-[8px] border-[#1E88E5]">
+            <div className="w-full bg-[#FAFAFA] md:bg-[#E6E6E6] p-4 lg:p-8 rounded-xl md:rounded-2xl shadow-sm md:shadow-md md:border-t-[8px] border-[#1E88E5]">
 
-              {/* Added generic header mapped directly from tab selected */}
               {(() => {
                 const activeTabObj = tabs.find(t => t.id === activeDetailTab);
                 const ActiveIcon = typeof activeTabObj?.icon === 'function' ? activeTabObj.icon : ICON_MAP[activeTabObj?.icon] || Info;
                 return activeTabObj ? (
-                  <header className="border-b border-slate-300 pb-4 mb-6 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                  <header className="border-b border-slate-200 md:border-slate-300 pb-3 md:pb-4 mb-4 md:mb-6 flex flex-col xl:flex-row xl:items-center justify-between gap-2 md:gap-4">
                     <div>
-                      <div className="text-[10px] font-bold text-[#1F2A8A] tracking-widest mb-1 uppercase">Gestão da Obra</div>
-                      <h1 className="text-2xl font-black text-[#1F2A8A] flex items-center gap-2 uppercase tracking-tighter">
-                        <ActiveIcon className="w-7 h-7 text-[#F57C00]" />
+                      <div className="text-[9px] font-bold text-[#1F2A8A] tracking-widest mb-1 uppercase opacity-60">Gestão da Obra</div>
+                      <h1 className="text-lg md:text-2xl font-black text-[#1F2A8A] flex items-center gap-2 uppercase tracking-tighter leading-none">
+                        <ActiveIcon className="w-5 h-5 md:w-7 md:h-7 text-[#F57C00]" />
                         {activeTabObj.label}
                       </h1>
                     </div>
@@ -411,12 +410,12 @@ const DetailView = ({
                 ) : null;
               })()}
 
-              <div className="space-y-8 animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-top-1 duration-200">
                 {(currentDetailTabLayout || []).map((row, ri) => (
-                  <div key={ri} className="grid grid-cols-12 gap-4 xl:gap-6">
+                  <div key={ri} className="flex flex-col md:grid md:grid-cols-12 gap-4 xl:gap-6">
                     {row.map(({ field: f, colSpan }, ci) =>
                       f ? (
-                        <div key={`${f.id}-${ci}`} style={{ gridColumn: `span ${colSpan || 12}` }}>
+                        <div key={`${f.id}-${ci}`} className={`w-full`} style={{ gridColumn: window.innerWidth > 768 ? `span ${colSpan || 12}` : 'span 12' }}>
                           <FieldRenderer
                             f={f}
                             selectedRecord={selectedRecord}
@@ -439,14 +438,14 @@ const DetailView = ({
           )}
         </div>
 
-        <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-3 rounded-b-xl">
+        <div className="p-4 md:p-6 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-b-xl">
           <div className={`transition-all duration-500 flex items-center gap-2 text-green-600 text-xs font-black ${saveToast ? 'opacity-100' : 'opacity-0'}`}>
             <CheckCircle2 size={16} />
             Salvo com sucesso!
           </div>
-          <div className="flex gap-3">
-            <Button variant="ghost" size="sm" onClick={() => setView('list')}>Fechar</Button>
-            <Button variant="primary" size="md" icon={CheckCircle2} onClick={handleConfirm}>Confirmar Dados</Button>
+          <div className="flex gap-3 w-full sm:w-auto">
+            <Button variant="ghost" size="sm" onClick={() => setView('list')} className="flex-1 sm:flex-none">Fechar</Button>
+            <Button variant="primary" size="md" icon={CheckCircle2} onClick={handleConfirm} className="flex-1 sm:flex-none">Salvar Dados</Button>
           </div>
         </div>
       </Card>

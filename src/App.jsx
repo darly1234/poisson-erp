@@ -87,6 +87,7 @@ function AppInner() {
 function AppMain() {
   const [view, setView] = useState('list');
   const [subView, setSubView] = useState('livros');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const [metadata, setMetadata] = useState({
     tabs: [
@@ -119,14 +120,9 @@ function AppMain() {
     return metadata.tabs?.flatMap(t => t.fields || []) || [];
   }, [metadata]);
 
-  const [records, setRecords] = useState([
-    { id: 'I-001', data: { f6: 'Dom Casmurro', f1: 'Machado de Assis', f7: '978-85-359-0277-7', f3: 'Ativo', f10: 'Pago', f11: '256', f9: 'R$ 5.400,00', f20: [] } },
-    { id: 'I-002', data: { f6: 'O Alienista', f1: 'Machado de Assis', f7: '978-85-359-0000-1', f3: 'Ativo', f10: 'Pendente', f11: '120', f9: 'R$ 2.100,00', f20: [] } }
-  ]);
+  const [records, setRecords] = useState([]);
 
-  const [savedFilters, setSavedFilters] = useState([
-    { id: 'f-default', name: 'Livros Ativos', globalLogic: 'AND', blocks: [{ id: 'b1', logic: 'AND', rules: [{ fieldId: 'f3', operator: 'equals', value: 'Ativo', value2: '' }] }] }
-  ]);
+  const [savedFilters, setSavedFilters] = useState([]);
   const [activeFilterId, setActiveFilterId] = useState('all');
   const [editingFilter, setEditingFilter] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -145,6 +141,47 @@ function AppMain() {
   const [dragActiveFieldId, setDragActiveFieldId] = useState(null);
 
   const [dashWidgets, setDashWidgets] = useState([]);
+  const [pipelineStats, setPipelineStats] = useState({});
+  const [totalPipelineBooks, setTotalPipelineBooks] = useState(0);
+
+  // Monitora records para calcular estatísticas do pipeline editorial
+  useEffect(() => {
+    const counts = {
+      'Para Editar': 0,
+      'Conferência': 0,
+      'Enviar Prova': 0,
+      'Avaliação Autor': 0,
+      'Alterações': 0,
+      'Para Publicar': 0,
+      'Publicado': 0
+    };
+
+    records.forEach(record => {
+      const workflow = record.data?.f_workflow_timeline;
+      if (Array.isArray(workflow) && workflow.length > 0) {
+        // Encontra o estágio atual: o primeiro não concluído
+        let currentStage = workflow.find(s => !s.completed);
+
+        // Se todos estiverem concluídos, o status é "Publicado"
+        const stageTitle = currentStage ? currentStage.title : 'Publicado';
+
+        // Mapeia para as chaves do pipeline se necessário (ajuste de normalização)
+        if (counts[stageTitle] !== undefined) {
+          counts[stageTitle]++;
+        } else {
+          // Se o título não bater exato, tenta match por proximidade
+          const match = Object.keys(counts).find(k => k.toLowerCase() === stageTitle.toLowerCase());
+          if (match) counts[match]++;
+        }
+      } else {
+        // Se não tem fluxo nenhum, cai no estágio inicial
+        counts['Para Editar']++;
+      }
+    });
+
+    setPipelineStats(counts);
+    setTotalPipelineBooks(records.length);
+  }, [records]);
 
 
   useEffect(() => {
@@ -163,17 +200,13 @@ function AppMain() {
           api.getFilters()
         ]);
 
-        if (recordsData.length > 0) {
-          setRecords(recordsData.map(r => ({ id: r.id, data: r.data })));
-        }
+        setRecords(recordsData.map(r => ({ id: r.id, data: r.data })));
 
         if (metadataData && (metadataData.tabs || metadataData.fieldBank)) {
           setMetadata(normalizeMetadata(metadataData));
         }
 
-        if (filtersData.length > 0) {
-          setSavedFilters(filtersData.map(f => ({ ...f.config, id: f.id, name: f.name })));
-        }
+        setSavedFilters(filtersData.map(f => ({ ...f.config, id: f.id, name: f.name })));
       } catch (err) {
         console.error('Erro ao carregar dados:', err);
       }
@@ -548,6 +581,7 @@ function AppMain() {
 
   const handleNavigate = (v) => {
     setView(v);
+    setIsMobileMenuOpen(false);
     if (v === 'list') setSubView('livros');
     if (v === 'config') {
       const toSave = metadata.fieldBank
@@ -560,13 +594,29 @@ function AppMain() {
 
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC] text-slate-900 overflow-hidden antialiased text-sm">
+    <div className="flex h-screen bg-[#F8FAFC] text-slate-900 overflow-hidden antialiased text-sm relative">
       <style>{poppinsStyle}</style>
 
-      <Sidebar view={view} onNavigate={handleNavigate} />
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-300"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      <Sidebar
+        view={view}
+        onNavigate={handleNavigate}
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+      />
 
       <main className="flex-1 flex flex-col overflow-hidden relative">
-        <AppHeader view={view} setView={setView} />
+        <AppHeader
+          view={view}
+          setView={setView}
+          onMenuClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        />
 
         <section className="flex-1 overflow-auto p-6 scrollbar-thin bg-[#F8FAFC]">
           <div className="w-full min-w-0 space-y-6">
@@ -585,6 +635,8 @@ function AppMain() {
                 sortConfig={sortConfig} requestSort={requestSort}
                 rowsPerPage={rowsPerPage} setRowsPerPage={setRowsPerPage}
                 currentPage={currentPage} totalPages={totalPages}
+                pipelineStats={pipelineStats}
+                totalPipelineBooks={totalPipelineBooks}
                 filteredRecords={filteredRecords}
                 records={records} setRecords={setRecords}
                 editingFilter={editingFilter} setEditingFilter={setEditingFilter}

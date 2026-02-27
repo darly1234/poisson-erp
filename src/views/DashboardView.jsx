@@ -474,21 +474,21 @@ const DashboardView = ({ records, allFields, dashWidgets, setDashWidgets, onOpen
   };
 
   return (
-    <div className="animate-slide space-y-8 p-1">
+    <div className="animate-slide space-y-6 md:space-y-8 p-1">
       {/* Top bar */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 shadow-lg">
-            <LayoutDashboard size={20} className="text-white" />
+          <div className="p-2 md:p-2.5 rounded-xl md:rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 shadow-lg">
+            <LayoutDashboard size={18} className="text-white md:w-5 md:h-5" />
           </div>
           <div>
-            <h2 className="text-xl font-black text-slate-800">Dashboard</h2>
-            <p className="text-[11px] text-slate-400">{dashWidgets.length} widget{dashWidgets.length !== 1 ? 's' : ''} configurado{dashWidgets.length !== 1 ? 's' : ''}</p>
+            <h2 className="text-lg md:text-xl font-black text-slate-800">Dashboard</h2>
+            <p className="text-[10px] md:text-[11px] text-slate-400">{dashWidgets.length} widget{dashWidgets.length !== 1 ? 's' : ''}</p>
           </div>
         </div>
         <button
           onClick={() => setShowDrawer(true)}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-black text-sm hover:opacity-90 transition-all shadow-lg shadow-indigo-200 hover:shadow-indigo-300 hover:-translate-y-0.5"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-black text-sm hover:opacity-90 transition-all shadow-lg shadow-indigo-200"
         >
           <Plus size={16} />
           Adicionar Widget
@@ -504,7 +504,7 @@ const DashboardView = ({ records, allFields, dashWidgets, setDashWidgets, onOpen
           onDragEnd={handleDragEnd}
         >
           <SortableContext items={dashWidgets.map(w => w.id)} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-6 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-6">
               {dashWidgets.map(w => {
                 const isKpi = ['kpi_count', 'kpi_avg', 'kpi_sum', 'kpi_category'].includes(w.chartType);
                 return (

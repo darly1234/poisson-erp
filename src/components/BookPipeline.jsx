@@ -22,25 +22,8 @@ const MOCK_BOOKS = [
     ...Array(15).fill({ status: 'Publicado' })
 ];
 
-const BookPipeline = ({ onFilterStatus }) => {
-    const [stats, setStats] = useState({});
-    const [totalBooks, setTotalBooks] = useState(0);
+const BookPipeline = ({ stats = {}, totalBooks = 0, onFilterStatus }) => {
     const [activeHover, setActiveHover] = useState(null);
-
-    useEffect(() => {
-        // Calculate the absolute numbers for each stage from mock
-        const counts = {};
-        PIPELINE_STAGES.forEach(stage => counts[stage.id] = 0);
-
-        MOCK_BOOKS.forEach(book => {
-            if (counts[book.status] !== undefined) {
-                counts[book.status]++;
-            }
-        });
-
-        setStats(counts);
-        setTotalBooks(MOCK_BOOKS.length);
-    }, []);
 
     const handleStepClick = (statusId) => {
         console.log(`Filtro acionado para o estágio: ${statusId}`);

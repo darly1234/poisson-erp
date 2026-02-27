@@ -1,16 +1,24 @@
 import React from 'react';
-import { ChevronRight, Mail, Save, LogOut } from 'lucide-react';
+import { ChevronRight, Mail, Save, LogOut, Menu } from 'lucide-react';
 import Button from '../ui/Button';
 import { useAuth } from '../../context/AuthContext';
 
-const AppHeader = ({ view, setView }) => {
+const AppHeader = ({ view, setView, onMenuClick }) => {
   const { user, logout } = useAuth();
 
   return (
-    <header className="h-14 bg-white border-b flex items-center justify-between px-6 shrink-0 z-20 shadow-sm">
-      <div className="flex items-center gap-3 text-slate-400 text-[10px] font-black uppercase tracking-[0.15em]">
-        <span>Poisson</span>
-        <ChevronRight size={10} />
+    <header className="h-14 bg-white border-b flex items-center justify-between px-4 lg:px-6 shrink-0 z-20 shadow-sm">
+      <div className="flex items-center gap-2 lg:gap-3 text-slate-400 text-[10px] font-black uppercase tracking-[0.15em]">
+        <button
+          onClick={onMenuClick}
+          className="lg:hidden p-2 -ml-2 hover:bg-slate-50 rounded-lg text-slate-600 transition-colors"
+        >
+          <Menu size={20} />
+        </button>
+        <div className="hidden xs:flex items-center gap-2 lg:gap-3">
+          <span>Poisson</span>
+          <ChevronRight size={10} />
+        </div>
         <span className="text-slate-900">
           {view === 'list' ? 'Acervo' : view === 'dashboard' ? 'BI' : 'Ajustes'}
         </span>

@@ -20,6 +20,7 @@ const ListView = ({
   sortConfig, requestSort,
   rowsPerPage, setRowsPerPage,
   currentPage, totalPages,
+  pipelineStats, totalPipelineBooks,
   filteredRecords,
   records, setRecords,
   editingFilter, setEditingFilter,
@@ -27,16 +28,16 @@ const ListView = ({
   handleExportExcel
 }) => (
   <div className="animate-slide">
-    <div className="flex gap-8 border-b border-slate-200 mb-6">
+    <div className="flex gap-4 md:gap-8 border-b border-slate-200 mb-6 overflow-x-auto no-scrollbar">
       <button
         onClick={() => setSubView('livros')}
-        className={`pb-4 px-1 text-xs font-black uppercase tracking-[0.2em] border-b-2 transition-all ${subView === 'livros' ? 'border-blue-700 text-blue-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+        className={`pb-4 px-1 text-[10px] md:text-xs font-black uppercase tracking-[0.2em] border-b-2 transition-all whitespace-nowrap ${subView === 'livros' ? 'border-blue-700 text-blue-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
       >
-        Visualização de Dados
+        Visualização
       </button>
       <button
         onClick={() => setSubView('filtros')}
-        className={`pb-4 px-1 text-xs font-black uppercase tracking-[0.2em] border-b-2 transition-all ${subView === 'filtros' ? 'border-blue-700 text-blue-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+        className={`pb-4 px-1 text-[10px] md:text-xs font-black uppercase tracking-[0.2em] border-b-2 transition-all whitespace-nowrap ${subView === 'filtros' ? 'border-blue-700 text-blue-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
       >
         Motores de Busca
       </button>
@@ -45,15 +46,15 @@ const ListView = ({
     {subView === 'livros' && (
       <div className="space-y-4">
         {/* New Book Pipeline Graphical Tracker */}
-        <BookPipeline />
+        <BookPipeline stats={pipelineStats} totalBooks={totalPipelineBooks} />
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="relative">
+        <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+            <div className="relative flex-1 sm:flex-none">
               <select
                 value={activeFilterId}
                 onChange={(e) => { setActiveFilterId(e.target.value); setCurrentPage(1); }}
-                className="pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-black uppercase tracking-wider appearance-none outline-none focus:ring-2 focus:ring-blue-500/20 hover:border-blue-300 transition-all cursor-pointer"
+                className="w-full sm:w-auto pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-black uppercase tracking-wider appearance-none outline-none focus:ring-2 focus:ring-blue-500/20 hover:border-blue-300 transition-all cursor-pointer"
               >
                 <option value="all">TODOS OS LIVROS</option>
                 {savedFilters.map(f => <option key={f.id} value={f.id}>{f.name.toUpperCase()}</option>)}
@@ -61,7 +62,7 @@ const ListView = ({
               <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 text-blue-600" size={14} />
               <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={12} />
             </div>
-            <div className="relative w-full md:w-80">
+            <div className="relative flex-1">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
               <input
                 type="text"
@@ -73,19 +74,13 @@ const ListView = ({
               />
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" icon={Columns} onClick={() => setShowColumnManager(!showColumnManager)}>Colunas</Button>
-            <Button variant="excel" size="sm" icon={Download} onClick={handleExportExcel}>Excel</Button>
+          <div className="flex flex-wrap items-center gap-2 mt-2 lg:mt-0">
+            <Button variant="outline" size="sm" icon={Columns} onClick={() => setShowColumnManager(!showColumnManager)} className="flex-1 sm:flex-none">Colunas</Button>
+            <Button variant="excel" size="sm" icon={Download} onClick={handleExportExcel} className="flex-1 sm:flex-none">Excel</Button>
             <Button variant="primary" size="sm" icon={Plus} onClick={() => {
-              // No Modo Draft, não salvamos no banco agora.
-              // Criamos um rascunho temporário com isNew: true
-              const draftRecord = {
-                id: 'NOVO-LIVRO',
-                data: {},
-                isNew: true
-              };
+              const draftRecord = { id: 'NOVO-LIVRO', data: {}, isNew: true };
               handleOpenDetail(draftRecord);
-            }}>Novo Livro</Button>
+            }} className="w-full sm:w-auto">Novo Livro</Button>
           </div>
         </div>
 

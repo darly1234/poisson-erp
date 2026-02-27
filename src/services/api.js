@@ -17,7 +17,17 @@ const fetchWithAuth = async (endpoint, options = {}) => {
     throw new Error('Não autorizado (401). Faça login novamente.');
   }
 
-  if (!res.ok) throw new Error('Erro na requisição');
+  if (!res.ok) {
+    let errorMsg = 'Erro na requisição';
+    try {
+      const errorData = await res.json();
+      errorMsg = errorData.message || errorData.error || errorMsg;
+    } catch (e) {
+      // Se não for JSON, tenta pegar texto
+      try { errorMsg = await res.text() || errorMsg; } catch (e2) { }
+    }
+    throw new Error(errorMsg);
+  }
   return res.json();
 };
 

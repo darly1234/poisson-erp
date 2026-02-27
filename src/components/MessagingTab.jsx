@@ -12,6 +12,8 @@ const MessagingTab = ({ recordId, canonicalData }) => {
     const [sending, setSending] = useState(false);
     const [viewingMessage, setViewingMessage] = useState(null);
 
+    const textareaRef = React.useRef(null);
+
     useEffect(() => {
         async function load() {
             try {
@@ -27,6 +29,24 @@ const MessagingTab = ({ recordId, canonicalData }) => {
         }
         load();
     }, [recordId]);
+
+    const insertAtCursor = (text) => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const currentText = message;
+
+        const nextText = currentText.substring(0, start) + text + currentText.substring(end);
+        setMessage(nextText);
+
+        // Devolve o foco e posiciona cursor após a inserção
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(start + text.length, start + text.length);
+        }, 10);
+    };
 
     const handleTemplateChange = (e) => {
         const temp = templates.find(t => t.name === e.target.value);
@@ -54,7 +74,7 @@ const MessagingTab = ({ recordId, canonicalData }) => {
         if (!message) return;
         setSending(true);
         try {
-            const res = await api.sendMessage({
+            await api.sendMessage({
                 recordId,
                 message,
                 templateName: selectedTemplate?.name || 'Personalizada'
@@ -82,7 +102,7 @@ const MessagingTab = ({ recordId, canonicalData }) => {
                     <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Disparar Mensagem (n8n)</h3>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-8">
+                <div className="grid lg:grid-cols-2 gap-6 md:gap-8">
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Escolher Modelo</label>
@@ -100,14 +120,15 @@ const MessagingTab = ({ recordId, canonicalData }) => {
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Conteúdo da Mensagem</label>
                             <textarea
+                                ref={textareaRef}
                                 value={message}
                                 onChange={e => setMessage(e.target.value)}
                                 rows={8}
                                 className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 outline-none focus:border-blue-500 transition-all resize-none shadow-inner"
-                                placeholder="Digite sua mensagem aqui... variáveis dinâmicas já foram processadas na prévia."
+                                placeholder="Digite sua mensagem aqui..."
                             />
                             <p className="text-[9px] text-slate-400 italic flex items-center gap-1">
-                                <Info size={10} /> Esta mensagem será enviada exatamente como está para o n8n.
+                                <Info size={10} /> Esta mensagem será enviada exatamente como está.
                             </p>
                         </div>
 
@@ -115,6 +136,7 @@ const MessagingTab = ({ recordId, canonicalData }) => {
                             variant="primary"
                             size="md"
                             icon={Send}
+                            className="w-full md:w-auto"
                             onClick={handleSend}
                             disabled={sending || !message}
                         >
@@ -124,21 +146,27 @@ const MessagingTab = ({ recordId, canonicalData }) => {
 
                     <div className="bg-amber-50/50 p-6 rounded-3xl border border-amber-100/50 space-y-4">
                         <h4 className="text-[11px] font-black text-amber-700 uppercase tracking-widest flex items-center gap-2">
-                            <Eye size={14} /> Dica de Variáveis
+                            <Eye size={14} /> Inserir Variáveis
                         </h4>
-                        <p className="text-xs text-amber-600/80 leading-relaxed font-medium">
-                            Ao escolher um modelo, o sistema substitui automaticamente:
+                        <p className="text-[11px] text-amber-600/80 leading-relaxed font-medium">
+                            Clique abaixo para inserir na posição do cursor:
                         </p>
                         <div className="grid grid-cols-1 gap-2">
                             {[
                                 { k: '{{title}}', v: canonicalData.titulo },
+                                { k: '{{isbn}}', v: canonicalData.isbn },
                                 { k: '{{doi}}', v: canonicalData.doi },
+                                { k: '{{pub_date}}', v: canonicalData.ano },
                                 { k: '{{doi_link}}', v: canonicalData.url }
                             ].map(item => (
-                                <div key={item.k} className="flex justify-between items-center text-[10px] bg-white p-2 rounded-lg border border-amber-200/50 shadow-sm">
+                                <button
+                                    key={item.k}
+                                    onClick={() => insertAtCursor(item.k)}
+                                    className="flex justify-between items-center text-[10px] bg-white p-2.5 rounded-lg border border-amber-200/50 shadow-sm hover:border-amber-400 hover:bg-amber-100/20 transition-all text-left group"
+                                >
                                     <code className="font-bold text-amber-700">{item.k}</code>
-                                    <span className="text-slate-400 truncate max-w-[150px]">{item.v || 'Vazio'}</span>
-                                </div>
+                                    <span className="text-slate-400 truncate max-w-[120px] italic">{item.v || 'Vazio'}</span>
+                                </button>
                             ))}
                         </div>
                     </div>
@@ -152,8 +180,8 @@ const MessagingTab = ({ recordId, canonicalData }) => {
                     <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Histórico de Envios</h3>
                 </div>
 
-                <div className="overflow-hidden border border-slate-100 rounded-2xl">
-                    <table className="w-full text-left border-collapse">
+                <div className="overflow-x-auto no-scrollbar border border-slate-100 rounded-2xl">
+                    <table className="w-full text-left border-collapse min-w-[500px]">
                         <thead>
                             <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                                 <th className="px-6 py-4">Status</th>
@@ -171,26 +199,26 @@ const MessagingTab = ({ recordId, canonicalData }) => {
                                 >
                                     <td className="px-6 py-4">
                                         {log.status === 'Sucesso' ? (
-                                            <span className="flex items-center gap-1.5 text-green-600 text-xs font-bold">
-                                                <CheckCircle2 size={14} /> Sucesso
+                                            <span className="flex items-center gap-1.5 text-green-600 text-[11px] font-bold">
+                                                <CheckCircle2 size={13} /> Sucesso
                                             </span>
                                         ) : (
-                                            <span className="flex items-center gap-1.5 text-red-500 text-xs font-bold">
-                                                <XCircle size={14} /> Falha
+                                            <span className="flex items-center gap-1.5 text-red-500 text-[11px] font-bold">
+                                                <XCircle size={13} /> Falha
                                             </span>
                                         )}
                                     </td>
-                                    <td className="px-6 py-4 text-xs font-semibold text-slate-600">
-                                        <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100">
+                                    <td className="px-6 py-4 text-[11px] font-semibold text-slate-600">
+                                        <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 whitespace-nowrap">
                                             <Clock size={12} />
                                             {new Date(log.sent_at).toLocaleString('pt-BR')}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-xs font-bold text-slate-700">
+                                    <td className="px-6 py-4 text-[11px] font-bold text-slate-700">
                                         {log.template_name}
                                     </td>
                                     <td className="px-6 py-4">
-                                        <button className="text-[10px] font-black uppercase text-blue-600 hover:text-blue-700 underline underline-offset-4">
+                                        <button className="text-[9px] font-black uppercase text-blue-600 hover:text-blue-700 underline underline-offset-4">
                                             Ver Detalhes
                                         </button>
                                     </td>
@@ -199,7 +227,7 @@ const MessagingTab = ({ recordId, canonicalData }) => {
                             {history.length === 0 && (
                                 <tr>
                                     <td colSpan="4" className="px-6 py-12 text-center text-slate-300 text-xs font-medium">
-                                        Nenhuma mensagem enviada ainda para este livro.
+                                        Nenhuma mensagem enviada.
                                     </td>
                                 </tr>
                             )}

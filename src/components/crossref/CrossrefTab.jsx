@@ -33,7 +33,7 @@ export default function CrossrefTab({ initialData, onDataSync }) {
     const [formData, setFormData] = useState({
         titulo: initialData.titulo || '',
         isbn: initialData.isbn || '',
-        ano: initialData.ano || '',
+        ano: initialData.ano || new Date().getFullYear().toString(),
         editora: initialData.editora || '',
         nomes: initialData.nomes || [],
         doi: initialData.doi || '',
@@ -308,7 +308,7 @@ export default function CrossrefTab({ initialData, onDataSync }) {
                                 </div>
                                 <div>
                                     <label className="text-[10px] text-slate-500 font-bold uppercase block mb-1">Ano de Publicação</label>
-                                    <input type="text" name="ano" value={formData.ano} onChange={handleInputChange} placeholder="Ex: 2026" className="w-full p-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#1E88E5]" />
+                                    <input type="text" name="ano" value={formData.ano} onChange={handleInputChange} placeholder={`Ex: ${new Date().getFullYear()}`} className="w-full p-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#1E88E5]" />
                                 </div>
                                 <div>
                                     <label className="text-[10px] text-slate-500 font-bold uppercase block mb-1">Editora</label>

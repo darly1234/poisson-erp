@@ -95,40 +95,40 @@ const RecordsTable = ({
         </tbody>
       </table>
     </div>
-    <div className="p-4 bg-white border-t border-slate-100 flex justify-between items-center shrink-0">
-      <div className="flex items-center gap-5">
+    <div className="p-4 bg-white border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 shrink-0">
+      <div className="flex items-center gap-4 md:gap-5 w-full md:w-auto justify-between md:justify-start">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Exibir</span>
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest hidden xs:inline">Exibir</span>
           <select
             value={rowsPerPage}
             onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
             className="text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-2.5 py-1.5 outline-none hover:bg-blue-100 transition-colors"
           >
-            {[10, 20, 50, 100].map(n => <option key={n} value={n}>{n} livros</option>)}
+            {[10, 20, 50, 100].map(n => <option key={n} value={n}>{n} itens</option>)}
           </select>
         </div>
-        <div className="h-4 w-px bg-slate-200" />
+        <div className="h-4 w-px bg-slate-200 hidden xs:block" />
         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-          Total: <span className="text-slate-800 font-black">{filteredRecords.length} livros</span>
+          Total: <span className="text-slate-800 font-black">{filteredRecords.length}</span>
         </span>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto justify-center">
         <button
           disabled={currentPage === 1}
           onClick={() => setCurrentPage(p => p - 1)}
-          className="p-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-20 transition-all shadow-sm"
+          className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-20 transition-all shadow-sm"
         >
-          <ChevronLeft size={18} />
+          <ChevronLeft size={16} />
         </button>
-        <div className="flex items-center gap-1.5 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-600">
-          Página <span className="text-blue-700 font-black">{currentPage}</span> de <span className="text-slate-800 font-black">{totalPages}</span>
+        <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[10px] md:text-xs font-bold text-slate-600">
+          <span className="hidden xs:inline">Página</span> <span className="text-blue-700 font-black">{currentPage}</span> / <span className="text-slate-800 font-black">{totalPages}</span>
         </div>
         <button
           disabled={currentPage >= totalPages}
           onClick={() => setCurrentPage(p => p + 1)}
-          className="p-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-20 transition-all shadow-sm"
+          className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-20 transition-all shadow-sm"
         >
-          <ChevronRight size={18} />
+          <ChevronRight size={16} />
         </button>
       </div>
     </div>

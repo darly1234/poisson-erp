@@ -1,14 +1,25 @@
 import React from 'react';
-import { Settings, BarChart3, Layers } from 'lucide-react';
+import { Settings, BarChart3, Layers, X } from 'lucide-react';
 
-const Sidebar = ({ view, onNavigate }) => (
-  <aside className="w-60 bg-[#1F2A8A] text-white flex flex-col shrink-0 shadow-xl z-30">
-    <div className="p-5 border-b border-white/10 flex items-center gap-3">
-      <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center font-black text-xl shadow-lg transform -rotate-3">P</div>
-      <div className="flex flex-col">
-        <span className="font-bold uppercase text-white tracking-tight">Poisson ERP</span>
-        <span className="text-[9px] text-blue-300 font-bold uppercase tracking-[0.2em]">Enterprise Suite</span>
+const Sidebar = ({ view, onNavigate, isOpen, onClose }) => (
+  <aside
+    className={`fixed lg:relative top-0 left-0 bottom-0 w-64 bg-[#1F2A8A] text-white flex flex-col shrink-0 shadow-2xl z-50 transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      }`}
+  >
+    <div className="p-5 border-b border-white/10 flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center font-black text-xl shadow-lg transform -rotate-3">P</div>
+        <div className="flex flex-col">
+          <span className="font-bold uppercase text-white tracking-tight">Poisson ERP</span>
+          <span className="text-[9px] text-blue-300 font-bold uppercase tracking-[0.2em]">Enterprise Suite</span>
+        </div>
       </div>
+      <button
+        onClick={onClose}
+        className="lg:hidden p-2 hover:bg-white/10 rounded-lg text-blue-300 transition-colors"
+      >
+        <X size={20} />
+      </button>
     </div>
     <nav className="flex-1 py-6 px-3 space-y-1">
       <button

@@ -11,10 +11,13 @@ const getSshHeaders = () => {
     const headers = {};
     try {
         const c = JSON.parse(localStorage.getItem(SSH_CREDS_KEY) || '{}');
+        console.log('[FileManager] Loaded SSH creds for host:', c.sshHost);
         if (c.sshHost) headers['x-ssh-host'] = c.sshHost;
         if (c.sshUser) headers['x-ssh-user'] = c.sshUser;
         if (c.sshPassword) headers['x-ssh-password'] = c.sshPassword;
-    } catch { }
+    } catch (e) {
+        console.error('[FileManager] Error loading SSH creds:', e);
+    }
 
     const token = sessionStorage.getItem('access_token');
     if (token) headers['Authorization'] = `Bearer ${token}`;

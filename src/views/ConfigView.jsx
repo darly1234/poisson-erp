@@ -12,6 +12,72 @@ const WP_CREDS_KEY = 'poisson_wp_credentials';
 const SSH_CREDS_KEY = 'poisson_ssh_credentials';
 
 // ── Seção Webhook e Templates ───────────────────────────────────────────────
+// ── Sub-componente para cada Template para lidar com Refs próprios ──────────
+const TemplateItem = ({ temp, index, updateTemplate, removeTemplate }) => {
+  const textareaRef = React.useRef(null);
+
+  const insertVariable = (field) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const text = `{{${field}}}`;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const currentContent = temp.content || '';
+    const nextContent = currentContent.substring(0, start) + text + currentContent.substring(end);
+
+    updateTemplate(index, 'content', nextContent);
+
+    // Restaura foco e cursor
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + text.length, start + text.length);
+    }, 10);
+  };
+
+  return (
+    <div className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 relative group shadow-sm hover:shadow-md transition-all">
+      <button
+        onClick={() => { if (window.confirm('Excluir este modelo?')) removeTemplate(index) }}
+        className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-all"
+        title="Excluir modelo"
+      >
+        <Trash2 size={16} />
+      </button>
+      <div className="space-y-1">
+        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Nome do Modelo</label>
+        <input
+          type="text"
+          value={temp.name}
+          onChange={e => updateTemplate(index, 'name', e.target.value)}
+          className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none focus:border-blue-500 transition-all shadow-sm"
+        />
+      </div>
+      <div className="space-y-1">
+        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-slate-400">Conteúdo da Mensagem</label>
+        <textarea
+          ref={textareaRef}
+          rows={4}
+          value={temp.content}
+          onChange={e => updateTemplate(index, 'content', e.target.value)}
+          className="w-full p-3 bg-white border border-slate-200 rounded-lg text-xs font-medium outline-none focus:border-blue-500 transition-all resize-none shadow-sm min-h-[100px]"
+        />
+        <div className="flex flex-wrap gap-2 mt-2">
+          {['isbn', 'doi', 'title', 'pub_date', 'doi_link'].map(field => (
+            <button
+              key={field}
+              onClick={() => insertVariable(field)}
+              className="text-[9px] font-mono bg-blue-50 text-blue-600 px-2 py-1 rounded border border-blue-100 cursor-pointer hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-95"
+              title="Clique para inserir no cursor"
+            >
+              {'{{'}{field}{'}}'}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const TemplateSection = ({ handleInputInteraction }) => {
   const [webhookUrl, setWebhookUrl] = useState('');
   const [templates, setTemplates] = useState([]);
@@ -112,36 +178,13 @@ const TemplateSection = ({ handleInputInteraction }) => {
 
         <div className="grid gap-4">
           {templates.map((temp, i) => (
-            <div key={i} className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 relative group">
-              <button onClick={() => removeTemplate(i)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
-                <Trash2 size={16} />
-              </button>
-              <div className="space-y-1">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Nome do Modelo</label>
-                <input
-                  type="text"
-                  value={temp.name}
-                  onChange={e => updateTemplate(i, 'name', e.target.value)}
-                  className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none focus:border-blue-500 transition-all"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Conteúdo da Mensagem</label>
-                <textarea
-                  rows={4}
-                  value={temp.content}
-                  onChange={e => updateTemplate(i, 'content', e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-200 rounded-lg text-xs font-medium outline-none focus:border-blue-500 transition-all resize-none"
-                />
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {['isbn', 'doi', 'title', 'pub_date', 'doi_link'].map(field => (
-                    <span key={field} className="text-[9px] font-mono bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100 cursor-help" title={`Será substituído pelo ${field} real`}>
-                      {'{{'}{field}{'}}'}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <TemplateItem
+              key={i}
+              temp={temp}
+              index={i}
+              updateTemplate={updateTemplate}
+              removeTemplate={removeTemplate}
+            />
           ))}
           {templates.length === 0 && (
             <div className="text-center py-10 border-2 border-dashed border-slate-100 rounded-2xl text-slate-300 text-xs font-medium">
@@ -438,14 +481,14 @@ const ConfigView = ({
       </div>
     </div>
 
-    <Card className="flex flex-col md:flex-row min-h-[600px] border-none shadow-2xl relative">
+    <Card className="flex flex-col md:flex-row min-h-[600px] border-none shadow-2xl relative overflow-hidden">
       {confirmModal.show && (
         <DeleteConfirmModal confirmModal={confirmModal} setConfirmModal={setConfirmModal} executeDelete={executeDelete} />
       )}
 
-      <div className="w-full md:w-64 bg-slate-50/50 border-r border-slate-100 p-6 space-y-2">
+      <div className="w-full md:w-64 bg-slate-50/50 border-b md:border-b-0 md:border-r border-slate-100 p-4 md:p-6 flex flex-row md:flex-col gap-2 overflow-x-auto no-scrollbar whitespace-nowrap md:whitespace-normal">
         {[
-          { id: 'profile', label: 'Meu Perfil', icon: User },
+          { id: 'profile', label: 'Cadastro', icon: User },
           { id: 'metadata', label: 'Metadados', icon: Database },
           { id: 'messages', label: 'Mensagens', icon: Mail },
           { id: 'system', label: 'Sistema', icon: Layout },
@@ -453,15 +496,19 @@ const ConfigView = ({
         ].map(item => (
           <button
             key={item.id}
-            onClick={() => { setActiveConfigTab(item.id); setEditingTabId(null); }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all ${activeConfigTab === item.id ? 'bg-white shadow-sm text-blue-700 border border-slate-100' : 'text-slate-400 hover:bg-slate-100/50'}`}
+            onClick={() => {
+              setActiveConfigTab(item.id);
+              setEditingTabId(null);
+            }}
+            className={`flex-1 md:flex-none flex items-center justify-center md:justify-start gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all border shrink-0 ${activeConfigTab === item.id ? 'bg-white shadow-sm text-blue-700 border-slate-200' : 'text-slate-400 border-transparent hover:bg-slate-100/50'}`}
           >
-            <item.icon size={16} />{item.label}
+            <item.icon size={14} className="shrink-0" />
+            <span className="md:inline">{item.label}</span>
           </button>
         ))}
       </div>
 
-      <div className="flex-1 p-10 animate-in fade-in duration-300">
+      <div className="flex-1 p-5 md:p-10 animate-in fade-in duration-300 overflow-y-auto">
 
         {activeConfigTab === 'metadata' && (
           <FormLayoutBuilder
