@@ -77,7 +77,7 @@ export default function CrossrefTab({ initialData, onDataSync }) {
     });
 
     // Chapter mode
-    const [withChapters, setWithChapters] = useState(false);
+    const [withChapters, setWithChapters] = useState(initialData.withChapters === true);
     const [summaryText, setSummaryText] = useState('');
     const [previewChapters, setPreviewChapters] = useState([]);
     const [chapters, setChapters] = useState(initialData.chapters && initialData.chapters.length > 0 ? initialData.chapters : [{ num: 1, titulo: '', autores: '' }]);
@@ -187,6 +187,10 @@ export default function CrossrefTab({ initialData, onDataSync }) {
             doi: initialData.doi || prev.doi || '',
         }));
 
+        if (initialData.withChapters !== undefined) {
+            setWithChapters(initialData.withChapters === true);
+        }
+
         // Only set URL parts if we don't have them yet and initialData has a URL
         if (!urlFolder && !urlFile && initialData.url && typeof initialData.url === 'string') {
             const raw = extractSuffix(initialData.url);
@@ -277,7 +281,13 @@ export default function CrossrefTab({ initialData, onDataSync }) {
             const data = await response.json();
 
             if (response.ok) {
-                showMessage(`Depósito Recebido! (ID: ${data.submission_id || 'OK'}) - Pode levar alguns minutos para o DOI resolver.`, 'success');
+                const submissionId = data.submission_id || `CR-${Date.now()}`;
+                showMessage(`Depósito Recebido! (ID: ${submissionId}) - Pode levar alguns minutos para o DOI resolver.`, 'success');
+                // Persist submission info
+                onDataSync?.({
+                    submission_id: submissionId,
+                    last_submission_date: new Date().toISOString()
+                });
             } else {
                 showMessage(`Erro no depósito: ${data.message || 'Falha na comunicação com Crossref'}`, 'error');
             }
@@ -486,13 +496,34 @@ export default function CrossrefTab({ initialData, onDataSync }) {
                                         <div className="h-px bg-slate-200 flex-1"></div>
                                     </div>
                                     <button
-                                        onClick={handleSubmitCrossref}
+                                        onClick={() => {
+                                            const hasDoi = formData.doi && formData.doi.trim().length > 0;
+                                            if (hasDoi) {
+                                                if (window.confirm("Esta obra já possui um DOI registrado. Tem certeza que deseja enviar uma atualização para a Crossref? Isso substituirá os metadados anteriores.")) {
+                                                    handleSubmitCrossref();
+                                                }
+                                            } else {
+                                                handleSubmitCrossref();
+                                            }
+                                        }}
                                         disabled={isSubmitting || !credentials.login_id || !credentials.login_passwd}
-                                        className="w-full bg-[#1E88E5] hover:bg-[#1565C0] text-white font-black text-sm p-3 rounded-lg shadow flex justify-center items-center gap-2 transition-all disabled:opacity-50"
+                                        className={`w-full font-black text-sm p-3 rounded-lg shadow flex justify-center items-center gap-2 transition-all disabled:opacity-50 ${
+                                            formData.doi ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#1E88E5] hover:bg-[#1565C0]'
+                                        } text-white`}
                                     >
                                         {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
-                                        {isSubmitting ? 'ENVIANDO...' : 'ENVIAR VIA API'}
+                                        {isSubmitting ? 'ENVIANDO...' : (formData.doi ? 'ALTERAR DOI (RE-ENVIAR)' : 'ENVIAR VIA API')}
                                     </button>
+                                    
+                                    {initialData.submission_id && (
+                                        <div className="mt-2 p-2 bg-slate-50 border border-slate-100 rounded text-[9px] text-slate-400 flex flex-col gap-0.5">
+                                            <span className="font-bold uppercase opacity-60">Status do Depósito</span>
+                                            <span>ID: {initialData.submission_id}</span>
+                                            {initialData.last_submission_date && (
+                                                <span>📅 {new Date(initialData.last_submission_date).toLocaleString('pt-BR')}</span>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -511,7 +542,11 @@ export default function CrossrefTab({ initialData, onDataSync }) {
                                     </span>
                                     <button
                                         type="button"
-                                        onClick={() => setWithChapters(p => !p)}
+                                        onClick={() => {
+                                            const newState = !withChapters;
+                                            setWithChapters(newState);
+                                            onDataSync?.({ withChapters: newState });
+                                        }}
                                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${withChapters ? 'bg-[#1E88E5]' : 'bg-slate-300'}`}
                                     >
                                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${withChapters ? 'translate-x-6' : 'translate-x-1'}`} />
