@@ -6,85 +6,121 @@ import BackupPanel from './BackupPanel';
 import FormLayoutBuilder from '../components/layout/FormLayoutBuilder';
 import { normalizeMetadata } from '../utils/metadataMigration';
 import { api } from '../services/api';
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import {
+    ClassicEditor, Bold, Italic, Underline, Essentials, Paragraph,
+    FontBackgroundColor, FontColor, FontFamily, FontSize, Heading,
+    Link, List, Undo, Alignment, Autoformat, BlockQuote,
+    Indent, IndentBlock, PasteFromOffice, Strikethrough
+} from 'ckeditor5';
+import 'ckeditor5/ckeditor5.css';
+
+const EDITOR_STYLES = `
+  .ck-editor__editable_contained {
+    min-height: 200px !important;
+    max-height: 400px !important;
+  }
+  .ck.ck-editor {
+    width: 100% !important;
+  }
+`;
 
 const WP_CREDS_KEY = 'poisson_wp_credentials';
 const SSH_CREDS_KEY = 'poisson_ssh_credentials';
 
 // ── Seção Webhook e Templates ───────────────────────────────────────────────
 // ── Sub-componente para cada Template para lidar com Refs próprios ──────────
-const TemplateItem = ({ temp, index, updateTemplate, removeTemplate, setConfirmModal }) => {
-  const textareaRef = React.useRef(null);
+const TemplateEditor = ({ temp, index, updateTemplate, removeTemplate, setConfirmModal }) => {
+  const [editorReady, setEditorReady] = useState(false);
+  const editorRef = React.useRef(null);
 
   const insertVariable = (field) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    const text = `{{${field}}}`;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const currentContent = temp.content || '';
-    const nextContent = currentContent.substring(0, start) + text + currentContent.substring(end);
-
-    updateTemplate(index, 'content', nextContent);
-
-    // Restaura foco e cursor
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + text.length, start + text.length);
-    }, 10);
+    if (!editorRef.current) return;
+    const viewFragment = editorRef.current.data.processor.toView(`{{${field}}}`);
+    const modelFragment = editorRef.current.data.toModel(viewFragment);
+    editorRef.current.model.insertContent(modelFragment);
   };
 
   return (
-    <div className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 relative group shadow-sm hover:shadow-md transition-all">
-      <button
-        onClick={() => {
-          setConfirmModal({
-            show: true,
-            type: 'template',
-            id: index,
-            label: temp.name,
-            extraData: { removeTemplate }
-          })
-        }}
-        className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-all"
-        title="Excluir modelo"
-      >
-        <Trash2 size={16} />
-      </button>
-      <div className="space-y-1">
-        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Nome do Modelo</label>
-        <input
-          type="text"
-          value={temp.name}
-          onChange={e => updateTemplate(index, 'name', e.target.value)}
-          className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none focus:border-blue-500 transition-all shadow-sm"
-        />
+    <div className="p-6 bg-white border border-slate-200 rounded-3xl space-y-6 relative shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+      <style>{EDITOR_STYLES}</style>
+      <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+        <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight">Editando: {temp.name}</h4>
+        <button
+          onClick={() => {
+            setConfirmModal({
+              show: true,
+              type: 'template',
+              id: index,
+              label: temp.name,
+              extraData: { removeTemplate }
+            })
+          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-100 transition-all active:scale-95"
+          title="Excluir modelo"
+        >
+          <Trash2 size={14} /> Excluir Modelo
+        </button>
       </div>
-      <div className="space-y-1">
-        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Assunto do E-mail/Mensagem</label>
-        <input
-          type="text"
-          value={temp.subject || ''}
-          onChange={e => updateTemplate(index, 'subject', e.target.value)}
-          placeholder="Assunto da mensagem"
-          className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none focus:border-blue-500 transition-all shadow-sm"
-        />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Nome do Modelo</label>
+          <input
+            type="text"
+            value={temp.name}
+            onChange={e => updateTemplate(index, 'name', e.target.value)}
+            className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-blue-500 transition-all"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Assunto do E-mail/Mensagem</label>
+          <input
+            type="text"
+            value={temp.subject || ''}
+            onChange={e => updateTemplate(index, 'subject', e.target.value)}
+            placeholder="Assunto da mensagem"
+            className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-blue-500 transition-all"
+          />
+        </div>
       </div>
-      <div className="space-y-1">
-        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-slate-400">Conteúdo da Mensagem</label>
-        <textarea
-          ref={textareaRef}
-          rows={4}
-          value={temp.content}
-          onChange={e => updateTemplate(index, 'content', e.target.value)}
-          className="w-full p-3 bg-white border border-slate-200 rounded-lg text-xs font-medium outline-none focus:border-blue-500 transition-all resize-none shadow-sm min-h-[100px]"
-        />
-        <div className="flex flex-wrap gap-2 mt-2">
+
+      <div className="space-y-2">
+        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Conteúdo da Mensagem</label>
+        <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 shadow-inner">
+          <CKEditor
+            editor={ClassicEditor}
+            data={temp.content || ''}
+            onReady={(editor) => {
+              setEditorReady(true);
+              editorRef.current = editor;
+            }}
+            onChange={(event, editor) => {
+              updateTemplate(index, 'content', editor.getData());
+            }}
+            config={{
+                licenseKey: 'GPL',
+                plugins: [
+                    Essentials, Paragraph, Bold, Italic, Underline, Strikethrough,
+                    FontColor, FontBackgroundColor, FontFamily, FontSize,
+                    Heading, Link, List, Undo, Alignment, Autoformat, BlockQuote,
+                    Indent, IndentBlock, PasteFromOffice
+                ],
+                toolbar: [
+                    'undo', 'redo', '|', 'heading', '|', 'fontFamily', 'fontSize', 'fontColor', 'fontBackgroundColor', '|',
+                    'bold', 'italic', 'underline', 'strikethrough', '|', 'alignment', '|',
+                    'link', 'bulletedList', 'numberedList', 'blockquote', '|', 'outdent', 'indent'
+                ]
+            }}
+          />
+          {!editorReady && <div className="p-4 text-slate-400 text-[10px] animate-pulse">Carregando editor...</div>}
+        </div>
+        <div className="flex flex-wrap gap-2 mt-3">
           {['isbn', 'doi', 'title', 'pub_date', 'doi_link', 'negotiator_name'].map(field => (
             <button
               key={field}
               onClick={() => insertVariable(field)}
-              className="text-[9px] font-mono bg-blue-50 text-blue-600 px-2 py-1 rounded border border-blue-100 cursor-pointer hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-95"
-              title="Clique para inserir no cursor"
+              className="px-2.5 py-1.5 bg-blue-50 text-blue-600 rounded-lg border border-blue-100 text-[9px] font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-95 flex items-center gap-1.5"
             >
               {'{{'}{field}{'}}'}
             </button>
@@ -98,6 +134,7 @@ const TemplateItem = ({ temp, index, updateTemplate, removeTemplate, setConfirmM
 const TemplateSection = ({ handleInputInteraction, setConfirmModal }) => {
   const [webhookUrl, setWebhookUrl] = useState('');
   const [templates, setTemplates] = useState([]);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   const [smtpConfig, setSmtpConfig] = useState({
     host: '',
     port: '587',
@@ -151,66 +188,103 @@ const TemplateSection = ({ handleInputInteraction, setConfirmModal }) => {
   };
 
   const addTemplate = () => {
-    setTemplates([...templates, { 
-      name: 'Novo Modelo', 
-      subject: 'Assunto do Modelo', 
-      content: 'Olá, confira os dados: {{title}}' 
-    }]);
+    const newTemp = {
+      name: 'Novo Modelo ' + (templates.length + 1),
+      subject: 'Assunto do Modelo',
+      content: 'Olá, confira os dados: {{title}}'
+    };
+    const next = [...templates, newTemp];
+    setTemplates(next);
+    setSelectedIndex(next.length - 1);
   };
 
   const removeTemplate = (index) => {
-    setTemplates(templates.filter((_, i) => i !== index));
+    const next = templates.filter((_, i) => i !== index);
+    setTemplates(next);
+    setSelectedIndex(-1);
   };
 
   const updateTemplate = (index, field, value) => {
-    const newTemplates = [...templates];
-    newTemplates[index] = { ...newTemplates[index], [field]: value };
-    setTemplates(newTemplates);
+    const next = [...templates];
+    next[index] = { ...next[index], [field]: value };
+    setTemplates(next);
   };
 
   if (loading) return <div className="p-10 text-center text-slate-400">Carregando configurações...</div>;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      <div className="flex items-center gap-2 pb-4 border-b border-slate-100">
-        <Server className="w-5 h-5 text-[#F57C00]" />
-        <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">n8n e Mensagens</h3>
-      </div>
-
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6 items-end">
         <div className="space-y-2">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">URL do Webhook (n8n)</label>
-          <input
-            type="url"
-            value={webhookUrl}
-            onChange={e => setWebhookUrl(e.target.value)}
-            placeholder="https://sua-instancia.n8n.cloud/webhook/..."
-            className="w-full h-12 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-blue-500 transition-all font-mono"
-            onKeyDown={handleInputInteraction}
-          />
+          <label className="text-[10px] font-black text-[#1F2A8A] uppercase tracking-widest block">Webhook n8n</label>
+          <div className="relative">
+            <Cloud className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
+            <input
+              type="text"
+              value={webhookUrl}
+              onChange={e => setWebhookUrl(e.target.value)}
+              placeholder="https://n8n.seuservidor.com/webhook/..."
+              className="w-full h-12 pl-10 pr-4 bg-white border border-slate-200 rounded-2xl text-xs font-bold outline-none focus:border-blue-500 transition-all shadow-sm"
+            />
+          </div>
         </div>
+        <button
+          onClick={save}
+          className="h-12 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg active:scale-95"
+        >
+          <Save size={18} /> {saved ? 'Salvo!' : 'Salvar Alterações'}
+        </button>
       </div>
 
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Modelos de Mensagem</label>
-          <Button size="xs" variant="outline" onClick={addTemplate}>+ Novo Modelo</Button>
+      <div className="space-y-6 pt-6 border-t border-slate-100">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Mail className="w-5 h-5 text-blue-500" />
+            <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter">Modelos de Mensagem</h3>
+          </div>
+          <button
+            onClick={addTemplate}
+            className="px-5 py-2.5 bg-white border-2 border-dashed border-slate-200 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
+          >
+            + Criar Novo Modelo
+          </button>
         </div>
 
-        <div className="grid gap-4">
-          {templates.map((temp, i) => (
-            <TemplateItem
-              key={i}
-              temp={temp}
-              index={i}
+        <div className="bg-slate-50/50 p-6 rounded-3xl border border-slate-100 space-y-6">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Selecionar Modelo para Editar</label>
+            <select
+              value={selectedIndex}
+              onChange={e => setSelectedIndex(parseInt(e.target.value))}
+              className="w-full h-11 px-4 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 outline-none focus:border-blue-500 transition-all shadow-sm"
+            >
+              <option value="-1">Selecione um modelo...</option>
+              {templates.map((t, i) => (
+                <option key={i} value={i}>{t.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {selectedIndex >= 0 && templates[selectedIndex] && (
+            <TemplateEditor
+              temp={templates[selectedIndex]}
+              index={selectedIndex}
               updateTemplate={updateTemplate}
               removeTemplate={removeTemplate}
               setConfirmModal={setConfirmModal}
             />
-          ))}
+          )}
+
+          {selectedIndex === -1 && templates.length > 0 && (
+            <div className="py-12 text-center text-slate-400 animate-pulse">
+                <Mail size={32} className="mx-auto mb-3 opacity-20" />
+                <p className="text-[11px] font-bold uppercase tracking-widest">Selecione um modelo acima para começar a editar</p>
+            </div>
+          )}
+
           {templates.length === 0 && (
-            <div className="text-center py-10 border-2 border-dashed border-slate-100 rounded-2xl text-slate-300 text-xs font-medium">
-              Nenhum modelo cadastrado.
+            <div className="py-12 text-center bg-white border-2 border-dashed border-slate-100 rounded-3xl">
+                <p className="text-xs text-slate-400 font-medium italic">Nenhum modelo criado ainda.</p>
             </div>
           )}
         </div>

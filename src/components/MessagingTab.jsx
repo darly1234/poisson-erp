@@ -2,6 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { Send, History, CheckCircle2, XCircle, Clock, Eye, Info, Trash2 } from 'lucide-react';
 import Button from './ui/Button';
 import { api } from '../services/api';
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import {
+    ClassicEditor, Bold, Italic, Underline, Essentials, Paragraph,
+    FontBackgroundColor, FontColor, FontFamily, FontSize, Heading,
+    Link, List, Undo, Alignment, Autoformat, BlockQuote,
+    Indent, IndentBlock, PasteFromOffice, Strikethrough
+} from 'ckeditor5';
+import 'ckeditor5/ckeditor5.css';
+
+const EDITOR_STYLES = `
+  .ck-editor__editable_contained {
+    min-height: 250px !important;
+    max-height: 500px !important;
+  }
+  .ck.ck-editor {
+    width: 100% !important;
+  }
+`;
 
 const MessagingTab = ({ recordId, canonicalData }) => {
     const [templates, setTemplates] = useState([]);
@@ -12,6 +30,8 @@ const MessagingTab = ({ recordId, canonicalData }) => {
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const [viewingMessage, setViewingMessage] = useState(null);
+    const [editorReady, setEditorReady] = useState(false);
+    const editorRef = React.useRef(null);
 
     const textareaRef = React.useRef(null);
 
@@ -32,21 +52,10 @@ const MessagingTab = ({ recordId, canonicalData }) => {
     }, [recordId]);
 
     const insertAtCursor = (text) => {
-        const textarea = textareaRef.current;
-        if (!textarea) return;
-
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const currentText = message;
-
-        const nextText = currentText.substring(0, start) + text + currentText.substring(end);
-        setMessage(nextText);
-
-        // Devolve o foco e posiciona cursor após a inserção
-        setTimeout(() => {
-            textarea.focus();
-            textarea.setSelectionRange(start + text.length, start + text.length);
-        }, 10);
+        if (!editorRef.current) return;
+        const viewFragment = editorRef.current.data.processor.toView(text);
+        const modelFragment = editorRef.current.data.toModel(viewFragment);
+        editorRef.current.model.insertContent(modelFragment);
     };
 
     const handleTemplateChange = (e) => {
@@ -153,16 +162,38 @@ const MessagingTab = ({ recordId, canonicalData }) => {
 
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Conteúdo da Mensagem</label>
-                            <textarea
-                                ref={textareaRef}
-                                value={message}
-                                onChange={e => setMessage(e.target.value)}
-                                rows={8}
-                                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 outline-none focus:border-blue-500 transition-all resize-none shadow-inner"
-                                placeholder="Digite sua mensagem aqui..."
-                            />
+                            <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm">
+                                <style>{EDITOR_STYLES}</style>
+                                <CKEditor
+                                    editor={ClassicEditor}
+                                    data={message}
+                                    onReady={(editor) => {
+                                        setEditorReady(true);
+                                        editorRef.current = editor;
+                                    }}
+                                    onChange={(event, editor) => {
+                                        const data = editor.getData();
+                                        setMessage(data);
+                                    }}
+                                    config={{
+                                        licenseKey: 'GPL',
+                                        plugins: [
+                                            Essentials, Paragraph, Bold, Italic, Underline, Strikethrough,
+                                            FontColor, FontBackgroundColor, FontFamily, FontSize,
+                                            Heading, Link, List, Undo, Alignment, Autoformat, BlockQuote,
+                                            Indent, IndentBlock, PasteFromOffice
+                                        ],
+                                        toolbar: [
+                                            'undo', 'redo', '|', 'heading', '|', 'fontFamily', 'fontSize', 'fontColor', 'fontBackgroundColor', '|',
+                                            'bold', 'italic', 'underline', 'strikethrough', '|', 'alignment', '|',
+                                            'link', 'bulletedList', 'numberedList', 'blockquote', '|', 'outdent', 'indent'
+                                        ]
+                                    }}
+                                />
+                                {!editorReady && <div className="p-4 text-slate-400 text-[10px] animate-pulse">Carregando editor...</div>}
+                            </div>
                             <p className="text-[9px] text-slate-400 italic flex items-center gap-1">
-                                <Info size={10} /> Esta mensagem será enviada exatamente como está.
+                                <Info size={10} /> Esta mensagem será enviada exatamente como está (incluindo formatação HTML).
                             </p>
                         </div>
 
