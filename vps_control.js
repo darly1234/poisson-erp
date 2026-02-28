@@ -36,7 +36,9 @@ const syncList = [
     { local: 'c:/poisson-erp/src/components/files/FileManagerTab.jsx', remote: '/var/www/poisson-erp/src/components/files/FileManagerTab.jsx' },
     { local: 'c:/poisson-erp/src/components/modals/DeleteConfirmModal.jsx', remote: '/var/www/poisson-erp/src/components/modals/DeleteConfirmModal.jsx' },
     { local: 'c:/poisson-erp/src/components/list/ColumnManager.jsx', remote: '/var/www/poisson-erp/src/components/list/ColumnManager.jsx' },
-    { local: 'c:/poisson-erp/auth-system/backend/controllers/authController.js', remote: '/var/www/poisson-erp/auth-system/backend/controllers/authController.js' },
+    { local: 'c:/poisson-erp/src/components/fields/NegotiatorField.jsx', remote: '/var/www/poisson-erp/src/components/fields/NegotiatorField.jsx' },
+    { local: 'c:/poisson-erp/src/components/fields/AuthorsField.jsx', remote: '/var/www/poisson-erp/src/components/fields/AuthorsField.jsx' },
+    { local: 'c:/poisson-erp/src/utils/masks.js', remote: '/var/www/poisson-erp/src/utils/masks.js' },
     { local: 'c:/poisson-erp/package.json', remote: '/var/www/poisson-erp/package.json' }
 ];
 

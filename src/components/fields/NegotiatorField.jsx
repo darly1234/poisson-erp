@@ -39,12 +39,9 @@ const NegotiatorField = ({ value, onChange }) => {
     };
 
     const handlePhoneChange = (idx, rawValue) => {
-        // Se o valor for vazio, atualiza direto para permitir apagar
-        if (!rawValue) {
-            updatePessoa(idx, { telefone: '' });
-            return;
-        }
-        updatePessoa(idx, { telefone: phoneBrazilMask(rawValue) });
+        // Se o valor for vazio ou tiver apenas dígitos (parcial), atualiza sem forçar máscara agressiva
+        const masked = phoneBrazilMask(rawValue);
+        updatePessoa(idx, { telefone: masked });
     };
 
     return (
