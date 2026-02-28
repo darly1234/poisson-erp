@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Globe, Upload, ExternalLink, CheckCircle2, AlertCircle, BookOpen, Settings, Power } from 'lucide-react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
+import { api } from '../../services/api';
 
 const WP_CREDS_KEY = 'poisson_wp_credentials';
 
@@ -86,27 +87,17 @@ const WordPressTab = ({ initialData, coverImageBase64, coverMime, coverFilename,
         const newStatus = productStatus === 'publish' ? 'draft' : 'publish';
         setIsTogglingStatus(true);
         try {
-            const apiUrl = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:3001/api');
-            const r = await fetch(`${apiUrl}/wordpress/set-status`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    wpUrl: profileCreds.wpUrl || 'https://poisson.com.br',
-                    wpUser: profileCreds.wpUser,
-                    wpAppPassword: profileCreds.wpAppPassword,
-                    productId: currentProductId,
-                    status: newStatus,
-                }),
+            const data = await api.setWordPressStatus({
+                wpUrl: profileCreds.wpUrl || 'https://poisson.com.br',
+                wpUser: profileCreds.wpUser,
+                wpAppPassword: profileCreds.wpAppPassword,
+                productId: currentProductId,
+                status: newStatus,
             });
-            const data = await r.json();
-            if (r.ok) {
-                setProductStatus(newStatus);
-                onUpdate?.({ wp_product_status: newStatus });
-            } else {
-                alert(`Erro ao alterar status: ${data.message}`);
-            }
+            setProductStatus(newStatus);
+            onUpdate?.({ wp_product_status: newStatus });
         } catch (e) {
-            alert(`Erro de conexão: ${e.message}`);
+            alert(`Erro ao alterar status: ${e.message}`);
         } finally {
             setIsTogglingStatus(false);
         }
@@ -131,53 +122,40 @@ const WordPressTab = ({ initialData, coverImageBase64, coverMime, coverFilename,
         setStatusMsg({ text: 'Publicando no WordPress...', type: 'info' });
 
         try {
-            const apiUrl = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:3001/api');
-            const response = await fetch(`${apiUrl}/wordpress/publish`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    wpUrl: profileCreds.wpUrl || 'https://poisson.com.br',
-                    wpUser: profileCreds.wpUser,
-                    wpAppPassword: profileCreds.wpAppPassword,
-                    title: initialData.titulo,
-                    isbn: initialData.isbn,
-                    doi: initialData.doi,
-                    description,
-                    abstract,
-                    area,
-                    lerOnline: lerOnlineAuto,
-                    dataPublicacao,
-                    autores,
-                    anoAtual,
-                    citationPdfUrl,
-                    productId: currentProductId || null,
-                    coverBase64: coverToSend,
-                    coverMime: coverToSend ? 'image/jpeg' : (coverMime || 'image/jpeg'),
-                    coverFilename: 'capa.jpg',
-                }),
+            const data = await api.publishWordPress({
+                wpUrl: profileCreds.wpUrl || 'https://poisson.com.br',
+                wpUser: profileCreds.wpUser,
+                wpAppPassword: profileCreds.wpAppPassword,
+                title: initialData.titulo,
+                isbn: initialData.isbn,
+                doi: initialData.doi,
+                description,
+                abstract,
+                area,
+                lerOnline: lerOnlineAuto,
+                dataPublicacao,
+                autores,
+                anoAtual,
+                citationPdfUrl,
+                productId: currentProductId || null,
+                coverBase64: coverToSend,
+                coverMime: coverToSend ? 'image/jpeg' : (coverMime || 'image/jpeg'),
+                coverFilename: 'capa.jpg',
             });
 
-            const data = await response.json();
-
-            if (response.ok) {
-                setResult({ ok: true, productUrl: data.productUrl, adminUrl: data.adminUrl, coverWarning: data.coverWarning });
-                setStatusMsg({ text: '', type: '' });
-                // Atualizar estado local e persistir no registro
-                setCurrentProductId(data.productId);
-                setCurrentProductUrl(data.productUrl);
-                setAlreadyPublished(true);
-                onUpdate?.({
-                    wp_product_id: data.productId,
-                    wp_product_url: data.productUrl,
-                });
-            } else {
-                const errMsg = data.message || data.code || JSON.stringify(data);
-                setResult({ error: errMsg });
-                setStatusMsg({ text: errMsg, type: 'error' });
-            }
+            setResult({ ok: true, productUrl: data.productUrl, adminUrl: data.adminUrl, coverWarning: data.coverWarning });
+            setStatusMsg({ text: '', type: '' });
+            // Atualizar estado local e persistir no registro
+            setCurrentProductId(data.productId);
+            setCurrentProductUrl(data.productUrl);
+            setAlreadyPublished(true);
+            onUpdate?.({
+                wp_product_id: data.productId,
+                wp_product_url: data.productUrl,
+            });
         } catch (err) {
             setResult({ error: err.message });
-            setStatusMsg({ text: 'Erro de conexão com o servidor.', type: 'error' });
+            setStatusMsg({ text: err.message, type: 'error' });
         } finally {
             setIsPublishing(false);
         }

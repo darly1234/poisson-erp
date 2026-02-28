@@ -74,5 +74,9 @@ export const api = {
   sendMessage: (data) => fetchWithAuth('/webhooks/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
   getMessageHistory: (recordId) => fetchWithAuth(`/webhooks/history/${recordId}`),
   getSettings: () => fetchWithAuth('/webhooks/settings'),
-  saveSettings: (key, value) => fetchWithAuth('/webhooks/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value }) })
+  saveSettings: (key, value) => fetchWithAuth('/webhooks/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value }) }),
+
+  // WordPress
+  publishWordPress: (data) => fetchWithAuth('/wordpress/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+  setWordPressStatus: (data) => fetchWithAuth('/wordpress/set-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
 };
