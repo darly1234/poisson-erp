@@ -11,8 +11,11 @@ const syncList = [
     { local: 'c:/poisson-backend/src/routes/webhooks.js', remote: '/var/www/poisson-backend/src/routes/webhooks.js' },
     { local: 'c:/poisson-backend/server.js', remote: '/var/www/poisson-backend/server.js' },
     { local: 'c:/poisson-backend/src/routes/uploads.js', remote: '/var/www/poisson-backend/src/routes/uploads.js' },
+    { local: 'c:/poisson-backend/src/routes/wordpress.js', remote: '/var/www/poisson-backend/src/routes/wordpress.js' },
     { local: 'c:/poisson-backend/src/routes/backup.js', remote: '/var/www/poisson-backend/src/routes/backup.js' },
+    { local: 'c:/poisson-backend/src/middleware/authMiddleware.js', remote: '/var/www/poisson-backend/src/middleware/authMiddleware.js' },
     { local: 'c:/poisson-backend/.env', remote: '/var/www/poisson-backend/.env' },
+    { local: 'c:/poisson-backend/migrate_logs_id.js', remote: '/var/www/poisson-backend/migrate_logs_id.js' },
 
     // Frontend (exige rebuild)
     { local: 'c:/poisson-erp/src/services/api.js', remote: '/var/www/poisson-erp/src/services/api.js' },
@@ -28,11 +31,13 @@ const syncList = [
     { local: 'c:/poisson-erp/src/components/MessagingTab.jsx', remote: '/var/www/poisson-erp/src/components/MessagingTab.jsx' },
     { local: 'c:/poisson-erp/src/components/BookPipeline.jsx', remote: '/var/www/poisson-erp/src/components/BookPipeline.jsx' },
     { local: 'c:/poisson-erp/src/components/crossref/CrossrefTab.jsx', remote: '/var/www/poisson-erp/src/components/crossref/CrossrefTab.jsx' },
+    { local: 'c:/poisson-erp/src/components/wordpress/WordPressTab.jsx', remote: '/var/www/poisson-erp/src/components/wordpress/WordPressTab.jsx' },
     { local: 'c:/poisson-erp/src/components/fichy/FichyContainer.jsx', remote: '/var/www/poisson-erp/src/components/fichy/FichyContainer.jsx' },
     { local: 'c:/poisson-erp/src/components/files/FileManagerTab.jsx', remote: '/var/www/poisson-erp/src/components/files/FileManagerTab.jsx' },
     { local: 'c:/poisson-erp/src/components/modals/DeleteConfirmModal.jsx', remote: '/var/www/poisson-erp/src/components/modals/DeleteConfirmModal.jsx' },
     { local: 'c:/poisson-erp/src/components/list/ColumnManager.jsx', remote: '/var/www/poisson-erp/src/components/list/ColumnManager.jsx' },
-    { local: 'c:/poisson-erp/auth-system/backend/controllers/authController.js', remote: '/var/www/poisson-erp/auth-system/backend/controllers/authController.js' }
+    { local: 'c:/poisson-erp/auth-system/backend/controllers/authController.js', remote: '/var/www/poisson-erp/auth-system/backend/controllers/authController.js' },
+    { local: 'c:/poisson-erp/package.json', remote: '/var/www/poisson-erp/package.json' }
 ];
 
 conn.on('ready', () => {
@@ -72,6 +77,7 @@ conn.on('ready', () => {
 
         function runCommands() {
             const commands = [
+                'cd /var/www/poisson-erp && npm install --no-audit --no-fund',
                 'cd /var/www/poisson-erp && CI=false npm run build',
                 'pm2 restart poisson-api || pm2 restart all'
             ];

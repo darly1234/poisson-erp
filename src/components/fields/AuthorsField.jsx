@@ -60,6 +60,10 @@ const AuthorsField = ({ value, onChange }) => {
   };
 
   const handlePhoneChange = (idx, rawValue) => {
+    if (!rawValue) {
+      updatePessoa(idx, { telefone: '' });
+      return;
+    }
     updatePessoa(idx, { telefone: phoneBrazilMask(rawValue) });
   };
 

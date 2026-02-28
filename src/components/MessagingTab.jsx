@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, History, CheckCircle2, XCircle, Clock, Eye, Info } from 'lucide-react';
+import { Send, History, CheckCircle2, XCircle, Clock, Eye, Info, Trash2 } from 'lucide-react';
 import Button from './ui/Button';
 import { api } from '../services/api';
 
@@ -17,10 +17,10 @@ const MessagingTab = ({ recordId, canonicalData }) => {
     useEffect(() => {
         async function load() {
             try {
-                const settings = await api.getSettings();
-                setTemplates(settings.message_templates || []);
+                const settings = await api.getSettings() || {};
+                setTemplates(Array.isArray(settings.message_templates) ? settings.message_templates : []);
                 const hist = await api.getMessageHistory(recordId);
-                setHistory(hist);
+                setHistory(Array.isArray(hist) ? hist : []);
             } catch (err) {
                 console.error(err);
             } finally {
@@ -59,7 +59,8 @@ const MessagingTab = ({ recordId, canonicalData }) => {
                 isbn: canonicalData.isbn,
                 doi: canonicalData.doi,
                 pub_date: canonicalData.ano,
-                doi_link: canonicalData.url
+                doi_link: canonicalData.url,
+                negotiator_name: canonicalData.negociador_nome
             };
             Object.entries(replacements).forEach(([key, val]) => {
                 content = content.replace(new RegExp(`{{${key}}}`, 'g'), val || `[${key} não preenchido]`);
@@ -85,9 +86,22 @@ const MessagingTab = ({ recordId, canonicalData }) => {
             setHistory(hist);
             alert('Mensagem enviada com sucesso!');
         } catch (err) {
-            alert('Erro ao enviar: ' + err.message);
+            const detail = err.details ? `\n\nDetalhe: ${err.details}` : '';
+            alert('Erro ao enviar: ' + err.message + detail);
         } finally {
             setSending(false);
+        }
+    };
+
+    const handleDeleteHistory = async (e, id) => {
+        e.stopPropagation(); // Evita abrir o modal de detalhes
+        if (!window.confirm('Tem certeza que deseja excluir este registro do histórico?')) return;
+
+        try {
+            await api.deleteMessageHistory(id);
+            setHistory(history.filter(log => log.id !== id));
+        } catch (err) {
+            alert('Erro ao excluir histórico: ' + err.message);
         }
     };
 
@@ -111,7 +125,7 @@ const MessagingTab = ({ recordId, canonicalData }) => {
                                 className="w-full h-11 px-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 transition-all shadow-sm"
                             >
                                 <option value="">Mensagem Personalizada...</option>
-                                {templates.map((t, idx) => (
+                                {Array.isArray(templates) && templates.map((t, idx) => (
                                     <option key={idx} value={t.name}>{t.name}</option>
                                 ))}
                             </select>
@@ -157,7 +171,8 @@ const MessagingTab = ({ recordId, canonicalData }) => {
                                 { k: '{{isbn}}', v: canonicalData.isbn },
                                 { k: '{{doi}}', v: canonicalData.doi },
                                 { k: '{{pub_date}}', v: canonicalData.ano },
-                                { k: '{{doi_link}}', v: canonicalData.url }
+                                { k: '{{doi_link}}', v: canonicalData.url },
+                                { k: '{{negotiator_name}}', v: canonicalData.negociador_nome }
                             ].map(item => (
                                 <button
                                     key={item.k}
@@ -191,7 +206,7 @@ const MessagingTab = ({ recordId, canonicalData }) => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
-                            {history.map((log) => (
+                            {Array.isArray(history) && history.map((log) => (
                                 <tr
                                     key={log.id}
                                     className="hover:bg-slate-50/50 transition-colors cursor-pointer group"
@@ -218,9 +233,18 @@ const MessagingTab = ({ recordId, canonicalData }) => {
                                         {log.template_name}
                                     </td>
                                     <td className="px-6 py-4">
-                                        <button className="text-[9px] font-black uppercase text-blue-600 hover:text-blue-700 underline underline-offset-4">
-                                            Ver Detalhes
-                                        </button>
+                                        <div className="flex items-center gap-3">
+                                            <button className="text-[9px] font-black uppercase text-blue-600 hover:text-blue-700 underline underline-offset-4">
+                                                Ver Detalhes
+                                            </button>
+                                            <button
+                                                onClick={(e) => handleDeleteHistory(e, log.id)}
+                                                className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                                title="Excluir do Histórico"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

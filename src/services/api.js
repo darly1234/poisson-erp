@@ -8,22 +8,25 @@ const fetchWithAuth = async (endpoint, options = {}, retries = 2) => {
   };
 
   try {
-    const res = await fetch(`${API_URL}${endpoint}`, {
+    const url = new URL(`${API_URL}${endpoint}`, window.location.origin);
+    if (token) url.searchParams.set('token', token);
+
+    const res = await fetch(url.toString(), {
       ...options,
       headers,
       credentials: 'include'
     });
 
-    if (res.status === 401) {
-      throw new Error('Não autorizado (401). Faça login novamente.');
-    }
 
     if (!res.ok) {
       let errorMsg = 'Erro na requisição';
       try {
         const errorData = await res.json();
-        errorMsg = errorData.message || errorData.error || errorMsg;
+        const err = new Error(errorData.message || errorData.error || errorMsg);
+        if (errorData.details) err.details = errorData.details;
+        throw err;
       } catch (e) {
+        if (e.details) throw e; // Repassa se já tiver detalhes
         try { errorMsg = await res.text() || errorMsg; } catch (e2) { }
       }
       throw new Error(errorMsg);
@@ -73,6 +76,7 @@ export const api = {
   // Webhooks & n8n
   sendMessage: (data) => fetchWithAuth('/webhooks/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
   getMessageHistory: (recordId) => fetchWithAuth(`/webhooks/history/${recordId}`),
+  deleteMessageHistory: (id) => fetchWithAuth(`/webhooks/history/${id}`, { method: 'DELETE' }),
   getSettings: () => fetchWithAuth('/webhooks/settings'),
   saveSettings: (key, value) => fetchWithAuth('/webhooks/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value }) }),
 

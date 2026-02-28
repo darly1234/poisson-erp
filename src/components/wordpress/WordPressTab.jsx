@@ -1,8 +1,44 @@
 import React, { useState } from 'react';
-import { Globe, Upload, ExternalLink, CheckCircle2, AlertCircle, BookOpen, Settings, Power } from 'lucide-react';
-import ReactQuill from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css';
+import { Globe, Upload, ExternalLink, CheckCircle2, AlertCircle, BookOpen, Settings, Power, FileText } from 'lucide-react';
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import {
+    ClassicEditor,
+    Bold,
+    Italic,
+    Underline,
+    Essentials,
+    Paragraph,
+    FontBackgroundColor,
+    FontColor,
+    FontFamily,
+    FontSize,
+    Heading,
+    Link,
+    List,
+    Table,
+    TableToolbar,
+    Undo,
+    Alignment,
+    Autoformat,
+    BlockQuote,
+    Indent,
+    IndentBlock,
+    PasteFromOffice,
+    Strikethrough
+} from 'ckeditor5';
+
+import 'ckeditor5/ckeditor5.css';
 import { api } from '../../services/api';
+
+const EDITOR_STLYES = `
+  .ck-editor__editable_contained {
+    min-height: 250px !important;
+    max-height: 500px !important;
+  }
+  .ck.ck-editor {
+    width: 100% !important;
+  }
+`;
 
 const WP_CREDS_KEY = 'poisson_wp_credentials';
 
@@ -44,6 +80,7 @@ const WordPressTab = ({ initialData, coverImageBase64, coverMime, coverFilename,
         try { return JSON.parse(localStorage.getItem(WP_CREDS_KEY) || '{}'); } catch { return {}; }
     })();
     const hasProfileCreds = !!(profileCreds.wpUser && profileCreds.wpAppPassword);
+    const [editorReady, setEditorReady] = useState(false);
 
     const today = new Date().toISOString().split('T')[0];
 
@@ -84,6 +121,13 @@ const WordPressTab = ({ initialData, coverImageBase64, coverMime, coverFilename,
 
     const handleToggleStatus = async () => {
         if (!alreadyPublished || isTogglingStatus) return;
+
+        const token = sessionStorage.getItem('access_token');
+        if (!token) {
+            alert('Erro: Sessão expirada. Por favor, faça Logout e Login novamente.');
+            return;
+        }
+
         const newStatus = productStatus === 'publish' ? 'draft' : 'publish';
         setIsTogglingStatus(true);
         try {
@@ -103,6 +147,53 @@ const WordPressTab = ({ initialData, coverImageBase64, coverMime, coverFilename,
         }
     };
 
+    const updateBookDescriptionFromCrossref = () => {
+        const chapters = initialData.chapters || [];
+        if (chapters.length === 0 || !chapters[0].titulo) {
+            alert('⚠️ Importe os capítulos na aba Crossy primeiro!');
+            return;
+        }
+
+        const orgNames = Array.isArray(initialData.nomes) ? initialData.nomes.filter(n => n.trim()) : [];
+        const orgsText = orgNames.join(', ');
+        const isbnWithDashes = initialData.isbn || '';
+        const isAutor = initialData.responsabilidade === 'autor';
+
+        // Label logic
+        let label = '';
+        if (isAutor) {
+            label = orgNames.length > 1 ? 'Autores(as)' : 'Autor(a)';
+        } else {
+            label = orgNames.length > 1 ? 'Organizadores(as)' : 'Organizador(a)';
+        }
+
+        let html = `<div style="font-size: 0.9em;">`;
+        html += `<p><strong><span style="color:#b7d947;">${label}</span></strong></p>`;
+        html += `<p>${orgsText}</p>`;
+
+        html += `<p>&nbsp;</p><p>&nbsp;</p>`;
+
+        chapters.forEach((ch, index) => {
+            const doi = `10.36229/${isbnWithDashes}.CAP.${String(ch.num).padStart(2, '0')}`;
+            html += `<p style="margin-top: 1.5em;"><strong><span style="color:#b7d947;">Capítulo ${ch.num}:</span> ${ch.titulo}</strong></p>`;
+            if (ch.autores) {
+                html += `<p style="color: #666; margin-bottom: 0.2em;">${ch.autores}</p>`;
+            }
+            html += `<p><strong>DOI:</strong> <a href="https://doi.org/${doi}" target="_blank" style="color: #1E88E5; text-decoration: none;">${doi}</a></p>`;
+
+            if (index < chapters.length - 1) {
+                html += `<p>&nbsp;</p>`;
+            }
+        });
+
+        html += `</div>`;
+
+        setDescription(html);
+        save({ wp_description: html });
+        setStatusMsg({ text: 'Descrição preenchida com dados do Crossref!', type: 'success' });
+        setTimeout(() => setStatusMsg({ text: '', type: '' }), 3000);
+    };
+
     const handlePublish = async () => {
         if (!hasProfileCreds) {
             setStatusMsg({ text: 'Configure as credenciais em Configurações → Meu Perfil.', type: 'error' });
@@ -110,6 +201,12 @@ const WordPressTab = ({ initialData, coverImageBase64, coverMime, coverFilename,
         }
         if (!initialData.titulo) {
             setStatusMsg({ text: 'O livro não possui título.', type: 'error' });
+            return;
+        }
+
+        const token = sessionStorage.getItem('access_token');
+        if (!token) {
+            setStatusMsg({ text: 'Erro: Sessão expirada. Por favor, faça Logout e Login novamente.', type: 'error' });
             return;
         }
 
@@ -162,7 +259,7 @@ const WordPressTab = ({ initialData, coverImageBase64, coverMime, coverFilename,
     };
 
     const inputCls = "w-full h-9 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none focus:border-blue-500 transition-all";
-    const textareaCls = "w-full p-3 text-xs border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-[#1E88E5] bg-slate-50 resize-y";
+    const textareaCls = "w-full p-4 text-sm border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-[#1E88E5] bg-slate-50 resize-y leading-relaxed font-medium text-slate-700";
 
     return (
         <div className="bg-slate-50 p-4 md:p-6 font-sans text-slate-900 rounded-xl w-full">
@@ -257,33 +354,11 @@ const WordPressTab = ({ initialData, coverImageBase64, coverMime, coverFilename,
                     </div>
                 </div>
 
-                {/* Descrição e Abstract */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                        <h3 className="text-[11px] font-black uppercase text-[#1F2A8A] tracking-widest mb-3 flex items-center gap-2">
-                            <Upload className="w-4 h-4 text-[#F57C00]" /> Descrição do Produto
-                        </h3>
-                        <div className="h-[250px] mb-12">
-                            <ReactQuill
-                                theme="snow"
-                                value={description}
-                                onChange={setDescription}
-                                onBlur={() => save({ wp_description: description })}
-                                placeholder="Descrição exibida na página do produto WooCommerce..."
-                                style={{ height: '200px' }}
-                                modules={{
-                                    toolbar: [
-                                        [{ 'font': [] }, { 'size': [] }],
-                                        ['bold', 'italic', 'underline', 'strike'],
-                                        [{ 'color': [] }, { 'background': [] }],
-                                        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                                        ['clean']
-                                    ],
-                                }}
-                            />
-                        </div>
-                        <p className="text-[8px] text-slate-400 mt-1">Campo <code>description</code> do WooCommerce.</p>
-                    </div>
+                <style>{EDITOR_STLYES}</style>
+
+                {/* Abstract e Descrição (Empilhados, largura total) */}
+                <div className="flex flex-col gap-6">
+                    {/* 1. Abstract Primeiro */}
                     <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
                         <h3 className="text-[11px] font-black uppercase text-[#1F2A8A] tracking-widest mb-3 flex items-center gap-2">
                             <BookOpen className="w-4 h-4 text-[#F57C00]" /> Abstract
@@ -294,6 +369,68 @@ const WordPressTab = ({ initialData, coverImageBase64, coverMime, coverFilename,
                             placeholder="Resumo acadêmico (citation_abstract)..."
                             className={textareaCls} />
                         <p className="text-[8px] text-slate-400 mt-1">Meta <code>citation_abstract</code>.</p>
+                    </div>
+
+                    {/* 2. Descrição Segundo */}
+                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-[11px] font-black uppercase text-[#1F2A8A] tracking-widest flex items-center gap-2">
+                                <Upload className="w-4 h-4 text-[#F57C00]" /> Descrição do Livro
+                            </h3>
+                            <button
+                                onClick={updateBookDescriptionFromCrossref}
+                                className="bg-[#b7d947] hover:bg-[#a6c73d] text-[#1F2A8A] text-[9px] font-black px-3 py-1.5 rounded-lg shadow-sm transition-all flex items-center gap-1.5 border border-[#1f2a8a1a]"
+                            >
+                                <FileText className="w-3 h-3" />
+                                PREENCHER COM DADOS CROSSREF
+                            </button>
+                        </div>
+                        <div className="mb-0 overflow-hidden rounded-xl border border-slate-200" style={{ minHeight: '250px' }}>
+                            <CKEditor
+                                editor={ClassicEditor}
+                                data={description}
+                                onReady={() => setEditorReady(true)}
+                                onBlur={(event, editor) => {
+                                    const data = editor.getData();
+                                    setDescription(data);
+                                    save({ wp_description: data });
+                                }}
+                                onChange={(event, editor) => {
+                                    const data = editor.getData();
+                                    setDescription(data);
+                                }}
+                                config={{
+                                    licenseKey: 'GPL',
+                                    plugins: [
+                                        Essentials, Paragraph, Bold, Italic, Underline, Strikethrough,
+                                        FontColor, FontBackgroundColor, FontFamily, FontSize,
+                                        Heading, Link, List, Undo, Alignment, Autoformat, BlockQuote,
+                                        Indent, IndentBlock, PasteFromOffice
+                                    ],
+                                    toolbar: [
+                                        'undo', 'redo', '|',
+                                        'heading', '|',
+                                        'fontFamily', 'fontSize', 'fontColor', 'fontBackgroundColor', '|',
+                                        'bold', 'italic', 'underline', 'strikethrough', '|',
+                                        'alignment', '|',
+                                        'link', 'bulletedList', 'numberedList', 'blockquote', '|',
+                                        'outdent', 'indent'
+                                    ],
+                                    fontColor: {
+                                        colorPicker: {
+                                            format: 'hex'
+                                        }
+                                    },
+                                    fontBackgroundColor: {
+                                        colorPicker: {
+                                            format: 'hex'
+                                        }
+                                    }
+                                }}
+                            />
+                            {!editorReady && <div className="p-4 text-slate-400 text-[10px] animate-pulse">Carregando editor...</div>}
+                        </div>
+                        <p className="text-[8px] text-slate-400 mt-1">Campo <code>description</code> do WooCommerce.</p>
                     </div>
                 </div>
 
@@ -335,7 +472,7 @@ const WordPressTab = ({ initialData, coverImageBase64, coverMime, coverFilename,
                     {result?.ok && (
                         <div className="w-full bg-green-50 border border-green-200 rounded-xl p-4 flex flex-col gap-2">
                             <div className="flex items-center gap-2 text-green-700 font-black text-sm">
-                                <CheckCircle2 className="w-5 h-5" /> Produto publicado com sucesso!
+                                <CheckCircle2 className="w-5 h-5" /> Livro publicado com sucesso!
                             </div>
                             {result.coverWarning && (
                                 <div className="text-[10px] text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">

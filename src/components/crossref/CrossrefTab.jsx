@@ -12,6 +12,40 @@ const extractSuffix = (fullUrl) => {
     return fullUrl; // legacy: keep as-is so no data is lost
 };
 
+const parseSummary = (text) => {
+    if (!text) return [];
+    const chapters = [];
+    const blocks = text.split(/Capítulo\s+/i);
+
+    blocks.forEach(block => {
+        const trimmedBlock = block.trim();
+        if (!trimmedBlock) return;
+
+        const numMatch = trimmedBlock.match(/^(\d+):?/);
+        if (!numMatch) return;
+
+        const num = parseInt(numMatch[1], 10);
+        const lines = trimmedBlock.split('\n').map(l => l.trim()).filter(l => l);
+
+        let firstLine = lines[0].replace(/^\d+:?\s*/, '').trim();
+        const pageMatch = firstLine.match(/[\s\t]+(\d+)$/);
+        let title = firstLine;
+        if (pageMatch) {
+            title = firstLine.substring(0, firstLine.lastIndexOf(pageMatch[0])).trim();
+        }
+
+        let authors = '';
+        if (lines[1] && !lines[1].toLowerCase().startsWith('doi:')) {
+            authors = lines[1].replace(/;/g, ',').trim();
+        }
+
+        if (title) {
+            chapters.push({ num, titulo: title, autores: authors });
+        }
+    });
+    return chapters;
+};
+
 export default function CrossrefTab({ initialData, onDataSync }) {
     const [xmlContent, setXmlContent] = useState('');
     const [credentials, setCredentials] = useState({ login_id: 'pois', login_passwd: 'po_4719_arv' });
@@ -20,13 +54,15 @@ export default function CrossrefTab({ initialData, onDataSync }) {
     const [statusMsg, setStatusMsg] = useState({ text: '', type: '' });
     const [urlFolder, setUrlFolder] = useState(() => {
         const suffix = extractSuffix(initialData.url);
-        return suffix.includes('/') ? suffix.split('/')[0] : suffix;
+        const clean = suffix.toLowerCase().endsWith('.pdf') ? suffix.slice(0, -4) : suffix;
+        const lastSlash = clean.lastIndexOf('/');
+        return lastSlash !== -1 ? clean.substring(0, lastSlash) : '';
     });
     const [urlFile, setUrlFile] = useState(() => {
         const suffix = extractSuffix(initialData.url);
-        if (!suffix.includes('/')) return '';
-        const raw = suffix.split('/').slice(1).join('/');
-        return raw.toLowerCase().endsWith('.pdf') ? raw.slice(0, -4) : raw;
+        const clean = suffix.toLowerCase().endsWith('.pdf') ? suffix.slice(0, -4) : suffix;
+        const lastSlash = clean.lastIndexOf('/');
+        return lastSlash !== -1 ? clean.substring(lastSlash + 1) : clean;
     });
 
     // Editable state for missing/existing crossref fields
@@ -37,11 +73,14 @@ export default function CrossrefTab({ initialData, onDataSync }) {
         editora: initialData.editora || '',
         nomes: initialData.nomes || [],
         doi: initialData.doi || '',
+        responsabilidade: initialData.responsabilidade || 'organizador',
     });
 
     // Chapter mode
     const [withChapters, setWithChapters] = useState(false);
-    const [chapters, setChapters] = useState([{ num: 1, titulo: '', autores: '' }]);
+    const [summaryText, setSummaryText] = useState('');
+    const [previewChapters, setPreviewChapters] = useState([]);
+    const [chapters, setChapters] = useState(initialData.chapters && initialData.chapters.length > 0 ? initialData.chapters : [{ num: 1, titulo: '', autores: '' }]);
 
     // XML panel toggle
     const [showXml, setShowXml] = useState(true);
@@ -101,6 +140,23 @@ export default function CrossrefTab({ initialData, onDataSync }) {
         e.target.value = null;
     };
 
+    const handleSummaryChange = (text) => {
+        setSummaryText(text);
+        const parsed = parseSummary(text);
+        setPreviewChapters(parsed);
+    };
+
+    const importPreview = () => {
+        if (previewChapters.length > 0) {
+            setChapters(previewChapters);
+            onDataSync?.({ chapters: previewChapters });
+            setSummaryText('');
+            setPreviewChapters([]);
+            showMessage(`${previewChapters.length} capítulos importados do sumário!`, 'success');
+        }
+    };
+
+
     const addChapter = () => setChapters(prev => [...prev, { num: prev.length + 1, titulo: '', autores: '' }]);
     const removeChapter = (i) => setChapters(prev => prev.filter((_, idx) => idx !== i).map((c, idx) => ({ ...c, num: idx + 1 })));
     const updateChapter = (i, field, value) => setChapters(prev => prev.map((c, idx) => idx === i ? { ...c, [field]: value } : c));
@@ -135,12 +191,13 @@ export default function CrossrefTab({ initialData, onDataSync }) {
         if (!urlFolder && !urlFile && initialData.url && typeof initialData.url === 'string') {
             const raw = extractSuffix(initialData.url);
             const clean = raw.toLowerCase().endsWith('.pdf') ? raw.slice(0, -4) : raw;
-            const parts = clean.split('/');
-            if (parts.length >= 2) {
-                setUrlFolder(parts[0]);
-                setUrlFile(parts[1]);
-            } else if (parts.length === 1 && parts[0]) {
-                setUrlFile(parts[0]);
+            const lastSlash = clean.lastIndexOf('/');
+            if (lastSlash !== -1) {
+                setUrlFolder(clean.substring(0, lastSlash));
+                setUrlFile(clean.substring(lastSlash + 1));
+            } else if (clean) {
+                setUrlFile(clean);
+                setUrlFolder('');
             }
         }
     }, [initialData]);
@@ -303,7 +360,7 @@ export default function CrossrefTab({ initialData, onDataSync }) {
                                         <span className="bg-slate-100 text-slate-500 text-[11px] font-mono px-2 py-2 rounded border border-slate-200 select-none">.pdf</span>
                                     </div>
                                     {fullUrl && (
-                                        <p className="text-[9px] text-emerald-600 mt-1.5 font-mono truncate">{fullUrl}</p>
+                                        <a href={fullUrl} target="_blank" rel="noopener noreferrer" className="text-[9px] text-emerald-600 mt-1.5 font-mono truncate hover:underline block">{fullUrl}</a>
                                     )}
                                 </div>
                                 <div>
@@ -355,7 +412,7 @@ export default function CrossrefTab({ initialData, onDataSync }) {
                                             <span className="bg-slate-100 text-slate-500 text-[10px] font-mono px-1.5 py-1.5 rounded border border-slate-200 select-none">.pdf</span>
                                         </div>
                                         {fullUrl && (
-                                            <p className="text-[9px] text-emerald-600 mt-1 font-mono truncate">{fullUrl}</p>
+                                            <a href={fullUrl} target="_blank" rel="noopener noreferrer" className="text-[9px] text-emerald-600 mt-1 font-mono truncate hover:underline block">{fullUrl}</a>
                                         )}
                                     </div>
                                     <div className="grid grid-cols-2 gap-2">
@@ -534,6 +591,76 @@ export default function CrossrefTab({ initialData, onDataSync }) {
                                         <p className="text-[9px] text-slate-400 italic">
                                             DOIs gerados: <span className="font-mono">10.36229/{(formData.isbn || '').replace(/\D/g, '')}.CAP01, .CAP02…</span>
                                         </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {withChapters && (
+                                <div className="mt-8 border-t border-slate-100 pt-6">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <div className="bg-emerald-100 p-2 rounded-lg">
+                                            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-[12px] font-black uppercase text-slate-700 tracking-tight">Importação Rápida via Sumário</h4>
+                                            <p className="text-[9px] text-slate-400">Cole o texto do sumário para gerar a lista automaticamente.</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Texto do Sumário (Cole aqui)</label>
+                                            <textarea
+                                                value={summaryText}
+                                                onChange={e => handleSummaryChange(e.target.value)}
+                                                rows={12}
+                                                placeholder="Cole o sumário aqui... Ex: Capítulo 1: Título 11"
+                                                className="w-full p-4 text-xs font-mono border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 shadow-inner resize-none"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Planilha Resultante (Preview)</label>
+                                                {previewChapters.length > 0 && (
+                                                    <button
+                                                        onClick={importPreview}
+                                                        className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black px-3 py-1.5 rounded-lg shadow-sm transition-all flex items-center gap-1.5"
+                                                    >
+                                                        <Plus className="w-3 h-3" />
+                                                        CONFIRMAR IMPORTAÇÃO
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm h-[264px] overflow-y-auto">
+                                                <table className="w-full text-left border-collapse">
+                                                    <thead className="sticky top-0 bg-slate-100 z-10 shadow-sm">
+                                                        <tr>
+                                                            <th className="px-3 py-2 text-[9px] font-black uppercase text-slate-500 border-b border-slate-200 w-[60px]">Cap.</th>
+                                                            <th className="px-3 py-2 text-[9px] font-black uppercase text-slate-500 border-b border-slate-200">Título</th>
+                                                            <th className="px-3 py-2 text-[9px] font-black uppercase text-slate-500 border-b border-slate-200">Autores</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-100">
+                                                        {previewChapters.length > 0 ? (
+                                                            previewChapters.map((ch, idx) => (
+                                                                <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                                                                    <td className="px-3 py-2 text-[10px] font-mono text-[#1F2A8A] border-r border-slate-100 bg-slate-50/50">{ch.num}</td>
+                                                                    <td className="px-3 py-2 text-[10px] font-medium text-slate-700">{ch.titulo}</td>
+                                                                    <td className="px-3 py-2 text-[10px] text-slate-500 italic">{ch.autores}</td>
+                                                                </tr>
+                                                            ))
+                                                        ) : (
+                                                            <tr>
+                                                                <td colSpan={3} className="px-3 py-10 text-center text-[11px] text-slate-400 italic">
+                                                                    Nenhum dado processado. Cole o texto ao lado.
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             )}

@@ -23,7 +23,7 @@ const fmt = (bytes) => {
 
 const fmtDate = (ts) => ts ? new Date(ts).toLocaleDateString('pt-BR') : '—';
 
-const FileManagerTab = ({ initialPath = '/', fallbackPath = '/individuais' }) => {
+const FileManagerTab = ({ initialPath = '/', fallbackPath = '/individuais', onUrlSelect }) => {
     const [currentPath, setCurrentPath] = useState(initialPath);
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -41,6 +41,8 @@ const FileManagerTab = ({ initialPath = '/', fallbackPath = '/individuais' }) =>
     const publicUrl = selected?.type === 'file'
         ? `${PUBLIC_BASE}${currentPath.replace(/\/$/, '')}/${selected.name}`
         : null;
+
+    const isNonPdf = selected && selected.type === 'file' && !selected.name.toLowerCase().endsWith('.pdf');
 
     const load = useCallback(async (p = currentPath) => {
         setLoading(true); setError(''); setSelected(null);
@@ -132,7 +134,7 @@ const FileManagerTab = ({ initialPath = '/', fallbackPath = '/individuais' }) =>
     };
 
     return (
-        <div className="bg-slate-50 p-4 md:p-6 font-sans rounded-xl w-full h-full flex flex-col gap-4 min-h-[500px]">
+        <div className="bg-slate-50 p-4 md:p-6 font-sans rounded-xl w-full flex flex-col gap-4 min-h-[600px] h-[calc(100vh-350px)]">
 
             {/* Toolbar */}
             <div className="flex items-center justify-between gap-3 bg-white px-4 py-2.5 rounded-2xl border border-slate-200 shadow-sm">
@@ -189,11 +191,20 @@ const FileManagerTab = ({ initialPath = '/', fallbackPath = '/individuais' }) =>
 
             {/* URL pública do arquivo selecionado */}
             {publicUrl && (
-                <div className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-[#1F2A8A]/5 to-[#1E88E5]/5 border border-[#1E88E5]/20 rounded-2xl">
+                <div className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-[#1F2A8A]/5 to-[#1E88E5]/5 border border-[#1E88E5]/20 rounded-2xl relative">
                     <Link2 className="w-4 h-4 text-[#1E88E5] shrink-0" />
                     <a href={publicUrl} target="_blank" rel="noopener noreferrer"
                         className="flex-1 text-[11px] font-mono font-bold text-[#1F2A8A] hover:text-[#1E88E5] truncate transition-colors"
                         title={publicUrl}>{publicUrl}</a>
+
+                    {isNonPdf && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="px-3 py-1 bg-red-600 text-white rounded-full text-[10px] font-black shadow-lg animate-bounce flex items-center gap-1.5 pointer-events-auto">
+                                <AlertCircle className="w-3.5 h-3.5" /> Atenção: Somente PDFs são aceitos no Crossref
+                            </div>
+                        </div>
+                    )}
+
                     <a href={publicUrl} target="_blank" rel="noopener noreferrer"
                         className="p-1.5 rounded-lg hover:bg-white/80 text-slate-400 hover:text-[#1E88E5] transition-colors" title="Abrir em nova aba">
                         <ExternalLink className="w-3.5 h-3.5" />
@@ -211,6 +222,16 @@ const FileManagerTab = ({ initialPath = '/', fallbackPath = '/individuais' }) =>
                         <Copy className="w-3 h-3" />
                         {copied ? 'Copiado!' : 'Copiar URL'}
                     </button>
+                    {onUrlSelect && (
+                        <button
+                            onClick={() => onUrlSelect(publicUrl)}
+                            disabled={isNonPdf}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F57C00] hover:opacity-90 text-white rounded-xl text-[10px] font-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <ExternalLink className="w-3 h-3" />
+                            Envio Crossref
+                        </button>
+                    )}
                 </div>
             )}
             {error && (
@@ -228,12 +249,12 @@ const FileManagerTab = ({ initialPath = '/', fallbackPath = '/individuais' }) =>
                 </div>
             )}
 
-            {/* Área de arquivos com drag-and-drop */}
+            {/* Área de arquivos com drag-and-drop e scroll fixo */}
             <div
                 onDragOver={e => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
                 onDrop={handleDrop}
-                className={`flex-1 bg-white rounded-2xl border-2 transition-all duration-200 overflow-hidden ${dragOver ? 'border-blue-400 bg-blue-50 scale-[1.005]' : 'border-slate-200'
+                className={`flex-1 bg-white rounded-2xl border-2 transition-all duration-200 overflow-y-auto min-h-0 relative ${dragOver ? 'border-blue-400 bg-blue-50 scale-[1.005]' : 'border-slate-200'
                     }`}>
 
                 {loading && !items.length ? (
@@ -246,13 +267,13 @@ const FileManagerTab = ({ initialPath = '/', fallbackPath = '/individuais' }) =>
                         <p className="text-[11px]">Pasta vazia — arraste arquivos para fazer upload</p>
                     </div>
                 ) : (
-                    <table className="w-full text-[11px]">
-                        <thead className="bg-slate-50 border-b border-slate-100">
+                    <table className="w-full text-[11px] border-separate border-spacing-0">
+                        <thead className="sticky top-0 bg-slate-50 z-20 shadow-sm">
                             <tr>
-                                <th className="text-left px-4 py-2 font-black text-slate-500 uppercase tracking-widest text-[9px]">Nome</th>
-                                <th className="text-right px-4 py-2 font-black text-slate-500 uppercase tracking-widest text-[9px]">Tamanho</th>
-                                <th className="text-right px-4 py-2 font-black text-slate-500 uppercase tracking-widest text-[9px]">Modificado</th>
-                                <th className="px-4 py-2 w-10"></th>
+                                <th className="text-left px-4 py-2 font-black text-slate-500 uppercase tracking-widest text-[9px] border-b border-slate-100">Nome</th>
+                                <th className="text-right px-4 py-2 font-black text-slate-500 uppercase tracking-widest text-[9px] border-b border-slate-100">Tamanho</th>
+                                <th className="text-right px-4 py-2 font-black text-slate-500 uppercase tracking-widest text-[9px] border-b border-slate-100">Modificado</th>
+                                <th className="px-4 py-2 w-10 border-b border-slate-100"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -260,7 +281,9 @@ const FileManagerTab = ({ initialPath = '/', fallbackPath = '/individuais' }) =>
                                 <tr key={item.name}
                                     onClick={() => setSelected(s => s?.name === item.name ? null : item)}
                                     onDoubleClick={() => item.type === 'dir' && navigate(currentPath.replace(/\/$/, '') + '/' + item.name)}
-                                    className={`cursor-pointer border-b border-slate-50 hover:bg-slate-50 transition-colors ${selected?.name === item.name ? 'bg-blue-50 border-blue-100' : ''
+                                    className={`cursor-pointer border-b border-slate-50 transition-colors ${selected?.name === item.name
+                                        ? 'bg-red-50/70 border-red-200 hover:bg-red-100/50'
+                                        : 'hover:bg-slate-50'
                                         }`}>
                                     <td className="px-4 py-2.5 flex items-center gap-2 font-medium text-slate-700">
                                         {item.type === 'dir'

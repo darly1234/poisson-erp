@@ -69,7 +69,7 @@ const TemplateItem = ({ temp, index, updateTemplate, removeTemplate, setConfirmM
           className="w-full p-3 bg-white border border-slate-200 rounded-lg text-xs font-medium outline-none focus:border-blue-500 transition-all resize-none shadow-sm min-h-[100px]"
         />
         <div className="flex flex-wrap gap-2 mt-2">
-          {['isbn', 'doi', 'title', 'pub_date', 'doi_link'].map(field => (
+          {['isbn', 'doi', 'title', 'pub_date', 'doi_link', 'negotiator_name'].map(field => (
             <button
               key={field}
               onClick={() => insertVariable(field)}
@@ -113,9 +113,9 @@ const TemplateSection = ({ handleInputInteraction, setConfirmModal }) => {
   React.useEffect(() => {
     async function load() {
       try {
-        const settings = await api.getSettings();
+        const settings = await api.getSettings() || {};
         setWebhookUrl(settings.n8n_webhook_url?.url || '');
-        setTemplates(settings.message_templates || []);
+        setTemplates(Array.isArray(settings.message_templates) ? settings.message_templates : []);
         if (settings.smtp_config) setSmtpConfig(settings.smtp_config);
         if (settings.system_templates) setSystemTemplates(settings.system_templates);
       } catch (err) {

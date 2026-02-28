@@ -179,7 +179,7 @@ const DetailView = ({
   const tabs = [
     ...(metadata?.tabs || []),
     { id: 'fichy', label: 'Ficha Catalográfica', icon: BookOpen },
-    { id: 'crossref', label: 'Crossy', icon: Link },
+    { id: 'crossref', label: 'Crossref', icon: Link },
     { id: 'wordpress', label: 'WordPress', icon: ShoppingBag },
     { id: 'messaging', label: 'Comunicação', icon: Mail },
     { id: 'files', label: 'Arquivos', icon: FolderOpen },
@@ -225,6 +225,9 @@ const DetailView = ({
     wp_product_id: selectedRecord.data.wp_product_id || null,
     wp_product_url: selectedRecord.data.wp_product_url || '',
     wp_product_status: selectedRecord.data.wp_product_status || 'publish',
+    chapters: selectedRecord.data.chapters || [],
+    responsabilidade: selectedRecord.data.responsabilidade || 'organizador',
+    negociador_nome: (Array.isArray(selectedRecord.data.f_negotiators) && selectedRecord.data.f_negotiators[0]?.nome) || '',
   };
 
   const [saveToast, setSaveToast] = useState(false);
@@ -369,6 +372,16 @@ const DetailView = ({
             <FileManagerTab
               initialPath={doiFilesPath}
               fallbackPath="/individuais"
+              onUrlSelect={(url) => {
+                const updated = {
+                  ...selectedRecord,
+                  data: { ...selectedRecord.data, url: url }
+                };
+                setSelectedRecord(updated);
+                setRecords(records.map(r => r.id === selectedRecord.id ? updated : r));
+                api.updateRecord(selectedRecord.id, updated.data);
+                setActiveDetailTab('crossref');
+              }}
             />
           ) : activeDetailTab === 'messaging' ? (
             <MessagingTab
