@@ -1,38 +1,42 @@
 const API_URL = process.env.NODE_ENV === 'production' ? '/api' : (process.env.REACT_APP_API_URL || 'http://localhost:3001/api');
 
-const fetchWithAuth = async (endpoint, options = {}) => {
+const fetchWithAuth = async (endpoint, options = {}, retries = 2) => {
   const token = sessionStorage.getItem('access_token');
   const headers = {
     ...options.headers,
     ...(token ? { Authorization: `Bearer ${token}` } : {})
   };
 
-  const res = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers,
-    credentials: 'include' // Envia cookie do refresh token
-  });
-
-  if (res.status === 401) {
-    throw new Error('Não autorizado (401). Faça login novamente.');
-  }
-
-  if (!res.ok) {
-    let errorMsg = 'Erro na requisição';
-    try {
-      const errorData = await res.json();
-      errorMsg = errorData.message || errorData.error || errorMsg;
-    } catch (e) {
-      // Se não for JSON, tenta pegar texto
-      try { errorMsg = await res.text() || errorMsg; } catch (e2) { }
-    }
-    throw new Error(errorMsg);
-  }
-  const text = await res.text();
   try {
+    const res = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers,
+      credentials: 'include'
+    });
+
+    if (res.status === 401) {
+      throw new Error('Não autorizado (401). Faça login novamente.');
+    }
+
+    if (!res.ok) {
+      let errorMsg = 'Erro na requisição';
+      try {
+        const errorData = await res.json();
+        errorMsg = errorData.message || errorData.error || errorMsg;
+      } catch (e) {
+        try { errorMsg = await res.text() || errorMsg; } catch (e2) { }
+      }
+      throw new Error(errorMsg);
+    }
+    const text = await res.text();
     return text ? JSON.parse(text) : null;
-  } catch (e) {
-    return text;
+  } catch (err) {
+    if (retries > 0 && err.name !== 'AbortError' && !err.message.includes('401')) {
+      console.warn(`Tentativa de reconexão (${3 - retries})...`, err);
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      return fetchWithAuth(endpoint, options, retries - 1);
+    }
+    throw err;
   }
 };
 
