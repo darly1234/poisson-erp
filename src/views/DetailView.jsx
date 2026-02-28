@@ -258,7 +258,7 @@ const DetailView = ({
       setTimeout(() => setSaveToast(false), 3000);
     } catch (err) {
       console.error('Erro ao salvar:', err);
-      alert('Erro ao salvar os dados no servidor.');
+      alert(`Erro ao salvar os dados no servidor: ${err.message}`);
     }
   };
 
