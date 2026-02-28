@@ -6,6 +6,7 @@ import { api } from '../services/api';
 const MessagingTab = ({ recordId, canonicalData }) => {
     const [templates, setTemplates] = useState([]);
     const [selectedTemplate, setSelectedTemplate] = useState(null);
+    const [subject, setSubject] = useState('');
     const [message, setMessage] = useState('');
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -66,8 +67,15 @@ const MessagingTab = ({ recordId, canonicalData }) => {
                 content = content.replace(new RegExp(`{{${key}}}`, 'g'), val || `[${key} não preenchido]`);
             });
             setMessage(content);
+            // Substituição dinâmica para o assunto também
+            let sub = temp.subject || '';
+            Object.entries(replacements).forEach(([key, val]) => {
+                sub = sub.replace(new RegExp(`{{${key}}}`, 'g'), val || `[${key} não preenchido]`);
+            });
+            setSubject(sub);
         } else {
             setMessage('');
+            setSubject('');
         }
     };
 
@@ -77,6 +85,7 @@ const MessagingTab = ({ recordId, canonicalData }) => {
         try {
             await api.sendMessage({
                 recordId,
+                subject,
                 message,
                 templateName: selectedTemplate?.name || 'Personalizada'
             });
@@ -129,6 +138,17 @@ const MessagingTab = ({ recordId, canonicalData }) => {
                                     <option key={idx} value={t.name}>{t.name}</option>
                                 ))}
                             </select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Assunto da Mensagem</label>
+                            <input
+                                type="text"
+                                value={subject}
+                                onChange={e => setSubject(e.target.value)}
+                                className="w-full h-11 px-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 transition-all shadow-sm"
+                                placeholder="Assunto da mensagem (ex: Confirmação de dados)"
+                            />
                         </div>
 
                         <div className="space-y-2">

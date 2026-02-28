@@ -60,6 +60,16 @@ const TemplateItem = ({ temp, index, updateTemplate, removeTemplate, setConfirmM
         />
       </div>
       <div className="space-y-1">
+        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Assunto do E-mail/Mensagem</label>
+        <input
+          type="text"
+          value={temp.subject || ''}
+          onChange={e => updateTemplate(index, 'subject', e.target.value)}
+          placeholder="Assunto da mensagem"
+          className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs font-bold outline-none focus:border-blue-500 transition-all shadow-sm"
+        />
+      </div>
+      <div className="space-y-1">
         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-slate-400">Conteúdo da Mensagem</label>
         <textarea
           ref={textareaRef}
@@ -141,7 +151,11 @@ const TemplateSection = ({ handleInputInteraction, setConfirmModal }) => {
   };
 
   const addTemplate = () => {
-    setTemplates([...templates, { name: 'Novo Modelo', content: 'Olá, confira os dados: {{title}}' }]);
+    setTemplates([...templates, { 
+      name: 'Novo Modelo', 
+      subject: 'Assunto do Modelo', 
+      content: 'Olá, confira os dados: {{title}}' 
+    }]);
   };
 
   const removeTemplate = (index) => {
