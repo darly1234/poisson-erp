@@ -508,7 +508,7 @@ export default function CrossrefTab({ initialData, onDataSync }) {
                                         }}
                                         disabled={isSubmitting || !credentials.login_id || !credentials.login_passwd}
                                         className={`w-full font-black text-sm p-3 rounded-lg shadow flex justify-center items-center gap-2 transition-all disabled:opacity-50 ${
-                                            formData.doi ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#1E88E5] hover:bg-[#1565C0]'
+                                            formData.doi ? 'bg-red-600 hover:bg-red-700' : 'bg-[#1E88E5] hover:bg-[#1565C0]'
                                         } text-white`}
                                     >
                                         {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}

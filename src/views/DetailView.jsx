@@ -226,6 +226,9 @@ const DetailView = ({
     wp_product_url: selectedRecord.data.wp_product_url || '',
     wp_product_status: selectedRecord.data.wp_product_status || 'publish',
     chapters: selectedRecord.data.chapters || [],
+    withChapters: selectedRecord.data.withChapters || false,
+    submission_id: selectedRecord.data.submission_id || '',
+    last_submission_date: selectedRecord.data.last_submission_date || '',
     responsabilidade: selectedRecord.data.responsabilidade || 'organizador',
     negociador_nome: (Array.isArray(selectedRecord.data.f_negotiators) && selectedRecord.data.f_negotiators[0]?.nome) || '',
   };
