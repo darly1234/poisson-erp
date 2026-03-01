@@ -2,11 +2,8 @@ const { Client } = require('ssh2');
 const conn = new Client();
 
 conn.on('ready', () => {
-    console.log('SSH Connection Ready');
-    // Manual SQL update for record I-001 to inject the submission_id we know was generated
-    const sql = `UPDATE records SET data = data || '{"submission_id": "CR-1740776518177", "last_submission_date": "2026-02-28T18:02:00.000Z"}'::jsonb WHERE id = 'I-001';`;
-    const cmd = `sudo -u postgres psql -d poisson_erp -c "${sql}"`;
-    
+    // Restart ONLY the backend to be fast and safe
+    const cmd = 'pm2 restart poisson-api';
     conn.exec(cmd, (err, stream) => {
         if (err) {
             console.error('Exec Error:', err);
@@ -14,7 +11,7 @@ conn.on('ready', () => {
             return;
         }
         stream.on('close', (code) => {
-            console.log(`Update command finished with code ${code}`);
+            console.log(`Backend restart finished with code ${code}`);
             conn.end();
         }).on('data', (data) => {
             process.stdout.write(data);

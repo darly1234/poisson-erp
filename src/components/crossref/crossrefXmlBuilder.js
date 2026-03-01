@@ -76,12 +76,18 @@ export const generateCrossrefXml = (data, depositorName, depositorEmail) => {
         const chapterDoi = `10.36229/${isbnFormatted}.CAP.${numPadded}`;
 
         return `
-        <content_item component_type="chapter" level_sequence_number="${ch.num}">
+        <content_item component_type="chapter">
             ${chapterNomes.length > 0 ? `<contributors>${chapterContributors}
             </contributors>` : ''}
             <titles>
                 <title>${escapeXml(ch.titulo)}</title>
             </titles>
+            <publication_date media_type="print">
+                <year>${year}</year>
+            </publication_date>
+            <publication_date media_type="online">
+                <year>${year}</year>
+            </publication_date>
             <doi_data>
                 <doi>${chapterDoi}</doi>
                 <resource>${escapeXml(resourceUrl)}</resource>
@@ -111,10 +117,13 @@ export const generateCrossrefXml = (data, depositorName, depositorEmail) => {
                 <titles>
                     <title>${escapeXml(title)}</title>
                 </titles>
+                <publication_date media_type="print">
+                    <year>${year}</year>
+                </publication_date>
                 <publication_date media_type="online">
                     <year>${year}</year>
                 </publication_date>
-                <isbn media_type="electronic">${isbnRaw}</isbn>
+                <isbn>${escapeXml(data.isbn)}</isbn>
                 <publisher>
                     <publisher_name>${escapeXml(publisher)}</publisher_name>
                 </publisher>

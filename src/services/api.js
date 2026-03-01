@@ -82,5 +82,8 @@ export const api = {
 
   // WordPress
   publishWordPress: (data) => fetchWithAuth('/wordpress/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
-  setWordPressStatus: (data) => fetchWithAuth('/wordpress/set-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+  setWordPressStatus: (data) => fetchWithAuth('/wordpress/set-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+
+  // Crossref
+  depositCrossref: (data) => fetchWithAuth('/crossref/deposit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
 };

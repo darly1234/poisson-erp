@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { generateCrossrefXml } from './crossrefXmlBuilder';
 import { Download, UploadCloud, CheckCircle, AlertCircle, Loader2, Copy, Link, Eye, EyeOff, BookOpen, Plus, Trash2, BookMarked, ChevronDown, ChevronUp, Code2, FileSpreadsheet } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { api } from '../../services/api';
 
 const URL_BASE = 'https://livros.poisson.com.br/individuais/';
 
@@ -266,31 +267,19 @@ export default function CrossrefTab({ initialData, onDataSync }) {
         setStatusMsg({ text: 'Enviando para Crossref...', type: 'info' });
 
         try {
-            // Note: Update URL below depending on env variable once in prod
-            const apiUrl = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:3001/api');
-            const response = await fetch(`${apiUrl}/crossref/deposit`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    xmlContent,
-                    login_id: credentials.login_id,
-                    login_passwd: credentials.login_passwd
-                })
+            const data = await api.depositCrossref({
+                xmlContent,
+                login_id: credentials.login_id,
+                login_passwd: credentials.login_passwd
             });
 
-            const data = await response.json();
-
-            if (response.ok) {
-                const submissionId = data.submission_id || `CR-${Date.now()}`;
-                showMessage(`Depósito Recebido! (ID: ${submissionId}) - Pode levar alguns minutos para o DOI resolver.`, 'success');
-                // Persist submission info
-                onDataSync?.({
-                    submission_id: submissionId,
-                    last_submission_date: new Date().toISOString()
-                });
-            } else {
-                showMessage(`Erro no depósito: ${data.message || 'Falha na comunicação com Crossref'}`, 'error');
-            }
+            const submissionId = data.submission_id || `CR-${Date.now()}`;
+            showMessage(`Depósito Recebido! (ID: ${submissionId}) - Pode levar alguns minutos para o DOI resolver.`, 'success');
+            // Persist submission info
+            onDataSync?.({
+                submission_id: submissionId,
+                last_submission_date: new Date().toISOString()
+            });
 
         } catch (error) {
             console.error('Erro na submissão:', error);
@@ -435,6 +424,14 @@ export default function CrossrefTab({ initialData, onDataSync }) {
                                             <input type="text" name="editora" value={formData.editora} onChange={handleInputChange} className="w-full p-2 text-xs border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-[#1E88E5] shadow-sm bg-slate-50" />
                                         </div>
                                     </div>
+
+                                    {/* Status message relocated */}
+                                    {statusMsg.text && (
+                                        <div className={'mt-4 p-4 rounded-xl border text-sm flex gap-3 items-start ' + (statusMsg.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : statusMsg.type === 'info' ? 'bg-blue-50 border-blue-200 text-blue-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800')}>
+                                            {statusMsg.type === 'error' ? <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" /> : statusMsg.type === 'info' ? <Loader2 className="w-5 h-5 animate-spin shrink-0 mt-0.5" /> : <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />}
+                                            <span className="font-medium leading-relaxed">{statusMsg.text}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -700,14 +697,6 @@ export default function CrossrefTab({ initialData, onDataSync }) {
                                 </div>
                             )}
                         </div>
-
-                        {/* Status message */}
-                        {statusMsg.text && (
-                            <div className={'p-4 rounded-xl border text-sm flex gap-3 items-start ' + (statusMsg.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : statusMsg.type === 'info' ? 'bg-blue-50 border-blue-200 text-blue-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800')}>
-                                {statusMsg.type === 'error' ? <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" /> : statusMsg.type === 'info' ? <Loader2 className="w-5 h-5 animate-spin shrink-0 mt-0.5" /> : <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />}
-                                <span className="font-medium leading-relaxed">{statusMsg.text}</span>
-                            </div>
-                        )}
 
                         {/* ── XML Preview — recolhível ao final ── */}
                         <div className="rounded-2xl overflow-hidden border border-[#2d2d2d] shadow-lg">

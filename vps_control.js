@@ -14,6 +14,7 @@ const syncList = [
     { local: 'c:/poisson-backend/src/routes/wordpress.js', remote: '/var/www/poisson-backend/src/routes/wordpress.js' },
     { local: 'c:/poisson-backend/src/routes/backup.js', remote: '/var/www/poisson-backend/src/routes/backup.js' },
     { local: 'c:/poisson-backend/src/middleware/authMiddleware.js', remote: '/var/www/poisson-backend/src/middleware/authMiddleware.js' },
+    { local: 'c:/poisson-backend/src/routes/crossref.js', remote: '/var/www/poisson-backend/src/routes/crossref.js' },
     { local: 'c:/poisson-backend/.env', remote: '/var/www/poisson-backend/.env' },
     { local: 'c:/poisson-backend/migrate_logs_id.js', remote: '/var/www/poisson-backend/migrate_logs_id.js' },
 
@@ -31,6 +32,7 @@ const syncList = [
     { local: 'c:/poisson-erp/src/components/MessagingTab.jsx', remote: '/var/www/poisson-erp/src/components/MessagingTab.jsx' },
     { local: 'c:/poisson-erp/src/components/BookPipeline.jsx', remote: '/var/www/poisson-erp/src/components/BookPipeline.jsx' },
     { local: 'c:/poisson-erp/src/components/crossref/CrossrefTab.jsx', remote: '/var/www/poisson-erp/src/components/crossref/CrossrefTab.jsx' },
+    { local: 'c:/poisson-erp/src/components/crossref/crossrefXmlBuilder.js', remote: '/var/www/poisson-erp/src/components/crossref/crossrefXmlBuilder.js' },
     { local: 'c:/poisson-erp/src/components/wordpress/WordPressTab.jsx', remote: '/var/www/poisson-erp/src/components/wordpress/WordPressTab.jsx' },
     { local: 'c:/poisson-erp/src/components/fichy/FichyContainer.jsx', remote: '/var/www/poisson-erp/src/components/fichy/FichyContainer.jsx' },
     { local: 'c:/poisson-erp/src/components/files/FileManagerTab.jsx', remote: '/var/www/poisson-erp/src/components/files/FileManagerTab.jsx' },
